@@ -208,17 +208,13 @@ export async function generateAndDownloadDocx(data) {
   if (stal > 0) {
     scopeItems.push(sectionHead('Stålkonstruksjon'))
     scopeItems.push(body('Det er medregnet stålkonstruksjon til prosjektet. Pris er innhentet fra leverandør.'))
-    scopeItems.push(body(`Pris: ${stal.toLocaleString('nb-NO')},-`, { bold: true, color: DARK_BLUE }))
   }
 
   filteredBlocks.forEach(b => {
-    const mid = Math.round((b.price_low + b.price_high) / 2)
     scopeItems.push(sectionHead(b.name))
-    if (b.basis) scopeItems.push(body(b.basis))
     if (b.assumptions?.length) {
-      b.assumptions.forEach(a => scopeItems.push(body(`· ${a}`, { color: '555555' })))
+      b.assumptions.forEach(a => scopeItems.push(bullet(a)))
     }
-    scopeItems.push(body(`Pris: ${mid.toLocaleString('nb-NO')},-`, { bold: true, color: DARK_BLUE }))
   })
 
   // Ikke medregnet
