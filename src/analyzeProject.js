@@ -2,6 +2,7 @@
 // and merges results into one high-level price estimate.
 // Uses historiske_prosjekter.json as reference context.
 
+import * as XLSX from 'xlsx'
 import historiskeProsjekter from './historiske_prosjekter.json'
 import { loadManualProjects } from './utils'
 
@@ -197,6 +198,47 @@ async function textFileToContent(file) {
     reader.onload = () => resolve({ type: 'text', text: `[Fil: ${file.name}]\n${reader.result}` })
     reader.onerror = () => resolve({ type: 'text', text: `[Fil: ${file.name} — kunne ikke leses]` })
     reader.readAsText(file)
+  })
+}
+
+function isXlsxFile(file) {
+  const mime = file.type || ''
+  const name = file.name.toLowerCase()
+  return mime.includes('spreadsheet') || mime.includes('excel') ||
+         name.endsWith('.xlsx') || name.endsWith('.xls')
+}
+
+function parseXlsxToText(arrayBuffer, fileName) {
+  try {
+    const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
+    const lines = [`[Excel-fil: ${fileName}]`]
+    const priority = ['Tilbud', 'Resultat', 'Prisoppsett']
+    const sortedSheets = [
+      ...priority.filter(n => wb.SheetNames.includes(n)),
+      ...wb.SheetNames.filter(n => !priority.includes(n))
+    ]
+    for (const sheetName of sortedSheets) {
+      const sheet = wb.Sheets[sheetName]
+      const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false })
+      if (!csv.trim()) continue
+      const trimmed = csv.length > 4000 ? csv.substring(0, 4000) + '\n[...resten av arket kuttet...]' : csv
+      lines.push(`\n--- Ark: ${sheetName} ---\n${trimmed}`)
+    }
+    return lines.join('\n')
+  } catch (err) {
+    return `[Excel-fil: ${fileName} — kunne ikke parse: ${err.message}]`
+  }
+}
+
+async function xlsxFileToContent(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = parseXlsxToText(reader.result, file.name)
+      resolve({ type: 'text', text })
+    }
+    reader.onerror = () => resolve({ type: 'text', text: `[Excel-fil: ${file.name} — kunne ikke leses]` })
+    reader.readAsArrayBuffer(file)
   })
 }
 
@@ -549,6 +591,8 @@ export async function analyzeProject(wrappedFiles, extraInfo, apiKey, onStatus) 
       let block
       if (mime === 'application/pdf' || mime.startsWith('image/')) {
         block = await fileToContent(file)
+      } else if (isXlsxFile(file)) {
+        block = await xlsxFileToContent(file)
       } else {
         block = await textFileToContent(file)
       }
@@ -607,6 +651,8 @@ async function analyzeSingleCall(wrappedFiles, extraInfo, apiKey, onStatus) {
     let block
     if (mime === 'application/pdf' || mime.startsWith('image/')) {
       block = await fileToContent(file)
+    } else if (isXlsxFile(file)) {
+      block = await xlsxFileToContent(file)
     } else {
       block = await textFileToContent(file)
     }
@@ -639,11 +685,12 @@ export async function extractProjectHistory(wrappedFiles, apiKey, onStatus) {
     const firstBatch = batches[0]
     onStatus(`Leser ${firstBatch.length} fil(er)...`)
     for (const wrapped of firstBatch) {
-      const block = wrapped.file.type === 'application/pdf' || wrapped.file.type?.startsWith('image/')
-        ? await fileToContent(wrapped.file)
-        : await textFileToContent(wrapped.file)
+      const f = wrapped.file
+      const block = f.type === 'application/pdf' || f.type?.startsWith('image/')
+        ? await fileToContent(f)
+        : isXlsxFile(f) ? await xlsxFileToContent(f) : await textFileToContent(f)
       if (block) {
-        content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${wrapped.file.name} ---` })
+        content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${f.name} ---` })
         content.push(block)
       }
     }
@@ -652,11 +699,12 @@ export async function extractProjectHistory(wrappedFiles, apiKey, onStatus) {
       for (let i = 1; i < batches.length; i++) {
         onStatus(`Leser batch ${i + 1}/${batches.length}...`)
         for (const wrapped of batches[i]) {
-          const block = wrapped.file.type === 'application/pdf' || wrapped.file.type?.startsWith('image/')
-            ? await fileToContent(wrapped.file)
-            : await textFileToContent(wrapped.file)
+          const f = wrapped.file
+          const block = f.type === 'application/pdf' || f.type?.startsWith('image/')
+            ? await fileToContent(f)
+            : isXlsxFile(f) ? await xlsxFileToContent(f) : await textFileToContent(f)
           if (block) {
-            content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${wrapped.file.name} ---` })
+            content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${f.name} ---` })
             content.push(block)
           }
         }
@@ -666,11 +714,12 @@ export async function extractProjectHistory(wrappedFiles, apiKey, onStatus) {
     for (let i = 0; i < wrappedFiles.length; i++) {
       const wrapped = wrappedFiles[i]
       onStatus(`Leser fil ${i + 1}/${wrappedFiles.length}: ${wrapped.file.name}`)
-      const block = wrapped.file.type === 'application/pdf' || wrapped.file.type?.startsWith('image/')
-        ? await fileToContent(wrapped.file)
-        : await textFileToContent(wrapped.file)
+      const f = wrapped.file
+      const block = f.type === 'application/pdf' || f.type?.startsWith('image/')
+        ? await fileToContent(f)
+        : isXlsxFile(f) ? await xlsxFileToContent(f) : await textFileToContent(f)
       if (block) {
-        content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${wrapped.file.name} ---` })
+        content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${f.name} ---` })
         content.push(block)
       }
     }
