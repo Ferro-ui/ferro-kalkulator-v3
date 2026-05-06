@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+credentials.json
+token.json
+scripts/.cache.json
+.DS_Store
+.claude/
+.gstack/
+*.local
+INSTALLED_SKILLS.txt
+SKILL.md
