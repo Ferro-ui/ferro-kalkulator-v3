@@ -1,758 +1,305 @@
-// Sends project files to Claude API in batches (to avoid rate limits)
-// and merges results into one high-level price estimate.
-// Uses historiske_prosjekter.json as reference context.
+// Routes project files to the Ferro backend for analysis.
+// When VITE_BACKEND_URL is not set, calls Claude directly from the browser
+// and runs the deterministic price calculator client-side.
 
+import Anthropic from '@anthropic-ai/sdk'
 import * as XLSX from 'xlsx'
-import historiskeProsjekter from './historiske_prosjekter.json'
-import { loadManualProjects } from './utils'
+import { calculatePrices } from './calculator.js'
 
-const MAX_BATCH_SIZE_MB = 4
-const BATCH_PAUSE_MS = 65_000
-const SINGLE_CALL_LIMIT_MB = 5
+const BASE_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '')
 
-// ─── Prompts ─────────────────────────────────────────────────────────────────
-const FULL_SYSTEM_PROMPT = `Du er en erfaren kalkulatør hos Ferro Stålentreprenør AS i Norge.
-Du mottar dokumenter fra et prosjekt (tilbud fra leverandører, arkitekttegninger, tidligere kalkulasjoner, bilder, e-poster, etc.) og skal gi et GROVT prisestimat fordelt på arbeidsblokker.
+const EXTRACTION_PROMPT = `Du er en erfaren kalkulator hos Ferro Stålentreprenør AS. Du leser tekniske byggetegninger og prosjektdokumenter.
 
-VIKTIG — Filosofi:
-- Du gir OMTRENTLIGE prisintervaller, ikke eksakte beregninger
-- Intervallene skal reflektere reell usikkerhet basert på tilgjengelig informasjon
-- Hvis informasjonen er mangelfull, gi VIDERE intervall og forklar hva som mangler
-- Stål-konstruksjonen vurderer bruker selv — ikke ta den med
-- Se på ALLE dokumenter samlet for å forstå prosjektet
+OPPGAVE: Les ALLE vedlagte dokumenter og tegninger grundig. Ekstraher og BEREGN fakta — ingen prisestimat.
 
-ARBEIDSBLOKKER du skal vurdere (kun de som er relevante for dette prosjektet):
+SLIK LESER DU STÅLBYGG-TEGNINGER:
+- Mål i tegninger er ofte i MM — del på 1000 for meter
+- Akseavstand (cc-avstand) × antall spenn = total lengde/bredde
+- Eksempel: 6 spenn × 5000mm = 30m bygglengde
+- Gesimshøyde = vegghoide for yttervegg-beregning
+- yttervegg_m2 = 2 × (lengde + bredde) × gesimshøyde
+- tak_m2 = grunnflate × 1.08 for flakt tak, × 1.15 for sadeltak
+- Stykkliste/materialspesifikasjon inneholder ofte sandwich-type og isolasjonstykkelse
+- Tittelblokk viser prosjektnavn og sted
 
-1. yttervegg — Ytterveggselementer inkl. materialer (sandwich-plater), montering, beslag, skruer, fugemasse
-2. innervegg — Innerveggselementer inkl. materialer, montering, beslag
-3. tak — Takplater/TRP/taktekning inkl. materialer, montering, takrenne, beslag, tekking
-4. kran_lift — Kran og lift: all transport og maskinleie for hele prosjektet
-5. dorer_vinduer — Dører og vinduer inkl. montering
-6. betong — Betongarbeid og fundament (kun hvis relevant)
-7. graving — Graving og grunnarbeid (kun hvis relevant)
-8. andre — Andre poster du identifiserer
-
-KRITISK: Returner KUN gyldig JSON. Ingen tekst før/etter. Ingen markdown blokker. Starter med { slutter med }.
-
-FILTYPER — hver fil har en etikett i format [TYPE] filnavn:
-- [TEGNING] — arkitekttegning, bruk for å finne mål og scope (ikke pris)
-- [TILBUD FRA LEVERANDØR] — innkjøpspris fra leverandør (Ruukki, Storm, Crawford osv.).
-  VIKTIG: Dette er det VI betaler. Legg til påslag 15-35% for prisen TIL kunde.
-- [VÅRT TILBUD] — det vi allerede har tilbudt en kunde. Bruk som referanse for påslagslogikk.
-- [KALKULASJON] — vår interne kalkulasjon (xlsx). Inneholder ofte sluttpriser.
-- [REFERANSE] — generell dokumentasjon, tidligere prosjekter, etc.
-- [DOKUMENT] — standard dokument uten spesifikk rolle.
-
-Hvis du ser [TILBUD FRA LEVERANDØR], bruk denne prisen som basis for innkjøp, og legg til påslag per blokk når du setter price_low/price_high for kunden.
-
-SVARSFORMAT (hold deg KORT — maks 2 setninger per tekstfelt):
+Returner BARE gyldig JSON, ingen tekst rundt:
 {
-  "project_summary": "MAKS 2 setninger om prosjektet",
-  "building": { "type": "kort", "size_m2": null, "dimensions": "kort", "location": "kort" },
-  "blocks": [
-    { "id": "yttervegg", "name": "Ytterveggselementer", "included": true,
-      "price_low": 180000, "price_high": 240000, "confidence": "lav|middels|høy",
-      "paslag_pct": 15,
-      "basis": "MAKS 1-2 setninger — hvilket historisk prosjekt brukt som ref + beregning",
-      "assumptions": ["maks 3 punkter, hver maks 10 ord"],
-      "missing_info": ["maks 2 punkter, hver maks 10 ord"] }
-  ],
-  "total_low": 0, "total_high": 0,
-  "exclusions": ["kort"], "warnings": ["kort"],
-  "recommended_rigg_pct": 8,
-  "forutsetninger": {
-    "u_verdi_tak": 0.18,
-    "u_verdi_vegg": 0.18,
-    "u_verdi_glass": 1.2,
-    "tiltaksklasse": "2",
-    "bruddgrense_kn_m2": 250,
-    "gyldighet_dager": 14
-  }
-}
-
-KRITISK: Vær KONSIS. Ingen lange forklaringer. Detaljene kan brukeren spørre om senere.
-
-PÅSLAG — sett paslag_pct per blokk basert på Ferro-historikk:
-- yttervegg/innervegg/tak/dorer_vinduer: 15-20%
-- stål: 25-35% (hvis tatt med)
-- kran_lift: 10-15% (UE-tungt)
-- betong: 10-15% (UE)
-- graving: 10% (UE)
-- andre: 15% default
-Prisene (price_low/price_high) SKAL allerede inkludere påslag. paslag_pct er informativ.
-
-FORUTSETNINGER — vurder per prosjekt basert på byggtype:
-- Oppvarmet bygg (butikk, verksted, kontor, vaskehall): U-verdi tak/vegg 0.18, glass 1.2
-- Uoppvarmet (kaldtlager, båtopplag, sandlager): U-verdi null (uisolert) eller 0.22-0.30
-- Tiltaksklasse: "1" for små enkle bygg, "2" for vanlige, "3" for komplekse
-- Bruddgrense vanligvis 250 kN/m², men kan være 200-400 avhengig av grunnforhold
-- Gyldighet: 14 dager default, 30 for større/komplekse prosjekter`
-
-const BATCH_SUMMARY_PROMPT = `Du er en erfaren kalkulatør hos Ferro Stålentreprenør AS. Du mottar NOEN dokumenter fra et større prosjekt (ikke alle). Din oppgave er å ekstrahere RELEVANTE FAKTA for senere kalkulasjon.
-
-Returner KUN gyldig JSON i dette formatet:
-{
-  "building_info": {
-    "type": "bygg-type hvis nevnt",
-    "dimensions": "mål hvis funnet (f.eks. 29×12×5,3m)",
-    "area_m2": null,
-    "location": "sted hvis nevnt"
+  "bygg_type": "lager|vaskehall|verksted|butikk|klubbhus|garasje|annet",
+  "dimensjoner": "f.eks. 29×12×5.3m, eller null",
+  "bra_m2": 348,
+  "tak_m2": 376,
+  "yttervegg_m2": 420,
+  "innervegg_m2": null,
+  "materialer": {
+    "sandwich_type": "PIR 120mm|Steinull 150mm|Steinull 200mm|null",
+    "tak_type": "PIR|TRP|Trapesblokk|null",
+    "isolasjon_mm": null
   },
-  "quantities_found": [
-    "Fasadetegninger viser 3 yttervegger ca 350m²",
-    "TRP-tak ca 380m²"
-  ],
-  "prices_found": [
-    "Ruukki tilbud stål: 420 000 kr"
-  ],
-  "scope_notes": [
-    "Kun yttervegg og tak er i scope"
-  ],
-  "exclusions_mentioned": ["..."],
-  "uncertainty_notes": ["..."]
+  "apninger": {
+    "foldeporter_stk": null,
+    "seksjonalporter_stk": null,
+    "ruteporter_stk": null,
+    "persondorer_stk": null,
+    "vinduer_stk": null
+  },
+  "scope_items": ["stål","yttervegg","tak","kran_lift"],
+  "lokasjon": "by/sted eller null",
+  "confidence": "high|medium|low",
+  "missing": ["kun felt som genuint IKKE kunne leses eller beregnes"]
 }
 
-Ingen tekst utenfor JSON. Hvis informasjon mangler — bruk tomme arrays, null.`
+Regler:
+- BEREGN yttervegg_m2 og tak_m2 fra tegningens mål — returner IKKE null hvis dimensjoner er synlige
+- Mål i mm i tegning: del på 1000. Mål i m: bruk direkte.
+- Antall spenn × akseavstand = total bygglengde/-bredde
+- bra_m2 = lengde × bredde (grunnflate)
+- Null bare for felt som genuint ikke finnes noe sted i dokumentene
+- confidence=high hvis dimensjoner er klart lesbare fra tegning
+- Aldri gjet priser — returner INGEN prisfelt
+- scope_items gyldige verdier: stål, yttervegg, innervegg, tak, dorer_vinduer, kran_lift, betong, graving
+- scope_items: bare blokker Ferro faktisk skal levere (stål er typisk Ferro-leveranse)`
 
-const MERGE_SYSTEM_PROMPT = `Du er en erfaren kalkulatør hos Ferro Stålentreprenør AS.
-Du mottar SAMMENDRAG fra flere dokument-batcher fra samme prosjekt. Du skal konsolidere alt til ett prisestimat.
+// ─── Main export ──────────────────────────────────────────────────────────────
+export async function analyzeProject(wrappedFiles, extraInfo, apiKey, onStatus) {
+  if (BASE_URL) {
+    return analyzeViaBackend(wrappedFiles, extraInfo, onStatus)
+  }
+  if (!apiKey) {
+    throw new Error('Legg inn Anthropic API-nøkkel (🔑-knappen) for å bruke AI-analyse.')
+  }
+  return analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus)
+}
 
-VIKTIG — Filosofi:
-- Du gir OMTRENTLIGE prisintervaller basert på ALLE sammendragene
-- Stål-konstruksjonen vurderer bruker selv — ikke ta den med
-- Bruk fakta fra alle batcher for å lage et helhetlig estimat
+// ─── Backend path ─────────────────────────────────────────────────────────────
+async function analyzeViaBackend(wrappedFiles, extraInfo, onStatus) {
+  onStatus('Forbereder filer...')
+  const normalized = wrappedFiles.map(f => f.file ? f : { file: f, fileType: 'other' })
+  const totalMB = normalized.reduce((s, w) => s + w.file.size, 0) / 1024 / 1024
+  onStatus(`Sender ${normalized.length} fil(er) (${totalMB.toFixed(1)} MB) til server...`)
 
-ARBEIDSBLOKKER (kun relevante for dette prosjektet):
-1. yttervegg, 2. innervegg, 3. tak, 4. kran_lift, 5. dorer_vinduer, 6. betong, 7. graving, 8. andre
+  const form = new FormData()
+  for (const { file } of normalized) form.append('files', file, file.name)
+  if (extraInfo) form.append('extraInfo', extraInfo)
 
-KRITISK: Returner KUN gyldig JSON. Ingen markdown. Starter med { slutter med }.
+  let res
+  try {
+    res = await fetch(`${BASE_URL}/api/analyze`, { method: 'POST', body: form })
+  } catch (e) {
+    throw new Error(`Kan ikke nå Ferro-serveren (${BASE_URL}). Er backend oppe? ${e.message}`)
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || `Serverfeil: ${res.status}`)
+  }
 
-SVARSFORMAT (hold deg KORT — maks 2 setninger per tekstfelt):
-{
-  "project_summary": "MAKS 2 setninger om prosjektet",
-  "building": { "type": "kort", "size_m2": null, "dimensions": "kort", "location": "kort" },
-  "blocks": [
-    { "id": "yttervegg", "name": "Ytterveggselementer", "included": true,
-      "price_low": 180000, "price_high": 240000, "confidence": "lav|middels|høy",
-      "paslag_pct": 15,
-      "basis": "MAKS 1-2 setninger — hvilket historisk prosjekt brukt som ref + beregning",
-      "assumptions": ["maks 3 punkter, hver maks 10 ord"],
-      "missing_info": ["maks 2 punkter, hver maks 10 ord"] }
-  ],
-  "total_low": 0, "total_high": 0,
-  "exclusions": ["kort"], "warnings": ["kort"],
-  "recommended_rigg_pct": 8,
-  "forutsetninger": {
-    "u_verdi_tak": 0.18,
-    "u_verdi_vegg": 0.18,
-    "u_verdi_glass": 1.2,
-    "tiltaksklasse": "2",
-    "bruddgrense_kn_m2": 250,
-    "gyldighet_dager": 14
+  onStatus('Analyserer med AI + kalkulerer priser...')
+  const result = await res.json()
+  if (!result.blocks || !Array.isArray(result.blocks)) {
+    throw new Error('Serveren returnerte ugyldig respons. Prøv igjen.')
+  }
+  if (!result.total_low || !result.total_high) {
+    const inc = result.blocks.filter(b => b.included)
+    result.total_low  = inc.reduce((s, b) => s + (b.price_low  || 0), 0)
+    result.total_high = inc.reduce((s, b) => s + (b.price_high || 0), 0)
+  }
+  onStatus('Ferdig!')
+  return result
+}
+
+// ─── Browser-direct path ──────────────────────────────────────────────────────
+async function analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus) {
+  const client     = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
+  const normalized = wrappedFiles.map(f => f.file ? f : { file: f, fileType: 'other' })
+
+  onStatus('Forbereder filer...')
+  const content = []
+  if (extraInfo?.trim()) {
+    content.push({ type: 'text', text: `TILLEGGSINFORMASJON FRA BRUKER:\n${extraInfo}` })
+  }
+  for (let i = 0; i < normalized.length; i++) {
+    const { file } = normalized[i]
+    onStatus(`Leser ${i + 1}/${normalized.length}: ${file.name}`)
+    const block = await fileToBlock(file)
+    if (block) content.push(block)
+  }
+  content.push({ type: 'text', text: EXTRACTION_PROMPT })
+
+  onStatus('Sender til Claude AI...')
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 2048,
+    messages: [{ role: 'user', content }],
+  })
+
+  const text  = response.content[0].text.trim()
+  const start = text.indexOf('{')
+  const end   = text.lastIndexOf('}')
+  if (start === -1) throw new Error('Claude klarte ikke å tolke dokumentene. Prøv å legge til tilleggsinformasjon.')
+  const facts = JSON.parse(text.slice(start, end + 1))
+
+  onStatus('Kalkulerer priser...')
+  const { blocks, totalLow, totalHigh } = calculatePrices(facts)
+
+  if (!blocks.length) {
+    throw new Error('Fant ingen arbeidsblokker å estimere. Legg til mer info om hva Ferro skal levere.')
+  }
+
+  const typeMap = { lager: 'Lagerbygg', vaskehall: 'Vaskehall', verksted: 'Verksted',
+    butikk: 'Butikk/forretning', klubbhus: 'Klubbhus', garasje: 'Garasje' }
+
+  onStatus('Ferdig!')
+  return {
+    project_summary: `${typeMap[facts.bygg_type] || facts.bygg_type || 'Bygg'}${facts.bra_m2 ? ', ' + facts.bra_m2 + 'm²' : ''}${facts.lokasjon ? ', ' + facts.lokasjon : ''}.`,
+    building: {
+      type: facts.bygg_type || 'ukjent',
+      size_m2: facts.bra_m2,
+      dimensions: facts.dimensjoner,
+      location: facts.lokasjon,
+    },
+    blocks,
+    total_low:  totalLow,
+    total_high: totalHigh,
+    exclusions: [],
+    warnings: facts.missing?.length ? [`Manglende data: ${facts.missing.join(', ')}`] : [],
+    recommended_rigg_pct: 8,
+    forutsetninger: {
+      u_verdi_tak: 0.18, u_verdi_vegg: 0.18, u_verdi_glass: 1.2,
+      tiltaksklasse: '2', bruddgrense_kn_m2: 250, gyldighet_dager: 14,
+    },
   }
 }
 
-KRITISK: Vær KONSIS. Ingen lange forklaringer. Detaljene kan brukeren spørre om senere.
+// ─── History extraction (admin feature — calls Claude directly) ───────────────
+const HISTORY_EXTRACT_PROMPT = `Du er en erfaren kalkulatør hos Ferro Stålentreprenør AS.
+Du mottar dokumenter fra et FULLFØRT Ferro-prosjekt. Trekk ut faktiske data.
 
-PÅSLAG — sett paslag_pct per blokk basert på Ferro-historikk:
-- yttervegg/innervegg/tak/dorer_vinduer: 15-20%
-- stål: 25-35% (hvis tatt med)
-- kran_lift: 10-15% (UE-tungt)
-- betong: 10-15% (UE)
-- graving: 10% (UE)
-- andre: 15% default
-Prisene (price_low/price_high) SKAL allerede inkludere påslag. paslag_pct er informativ.
+Returner KUN gyldig JSON (ingen tekst rundt):
+{
+  "navn": "Prosjektnavn",
+  "bygg": {
+    "type": "kort beskrivelse av bygget",
+    "dimensjoner": "f.eks. 29×12×5m",
+    "bra_m2": 345,
+    "fasade_m2": null,
+    "tak_m2": null,
+    "lokasjon": "by/sted"
+  },
+  "priser_til_kunde": {
+    "stal": null, "yttervegg": null, "innervegg": null, "tak": null,
+    "kran_lift": null, "dorer_vinduer": null, "betong": null, "graving": null,
+    "rigg_drift_pct": 8, "sum_eks_mva": null
+  },
+  "innkjop_fra_leverandorer": {
+    "stal_leverandor": null, "stal_innkjop_kr": null,
+    "sandwich_leverandor": null, "sandwich_innkjop_kr": null, "sandwich_type": null,
+    "tak_leverandor": null, "tak_innkjop_kr": null, "andre_ue": null
+  },
+  "paaslag_beregnet": {
+    "stal_paslag": null, "sandwich_paslag": null, "kommentar": null
+  },
+  "scope": "kommaseparert liste over hva Ferro leverte",
+  "tekniske_losninger": "kort teknisk beskrivelse",
+  "merknader": "viktige notater"
+}`
 
-FORUTSETNINGER — vurder per prosjekt basert på byggtype:
-- Oppvarmet bygg (butikk, verksted, kontor, vaskehall): U-verdi tak/vegg 0.18, glass 1.2
-- Uoppvarmet (kaldtlager, båtopplag, sandlager): U-verdi null (uisolert) eller 0.22-0.30
-- Tiltaksklasse: "1" for små enkle bygg, "2" for vanlige, "3" for komplekse
-- Bruddgrense vanligvis 250 kN/m², men kan være 200-400 avhengig av grunnforhold
-- Gyldighet: 14 dager default, 30 for større/komplekse prosjekter`
+export async function extractProjectHistory(wrappedFiles, apiKey, onStatus) {
+  if (!apiKey) throw new Error('API-nøkkel mangler. Klikk 🔑 og lim inn nøkkelen.')
 
-// ─── File handling ───────────────────────────────────────────────────────────
-async function fileToContent(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onerror = () => reject(new Error(`Kunne ikke lese: ${file.name}`))
-    reader.onload = () => {
-      const base64 = reader.result.split(',')[1]
-      const mime = file.type || 'application/octet-stream'
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
 
-      if (mime === 'application/pdf') {
-        resolve({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 }, title: file.name })
-      } else if (mime.startsWith('image/')) {
-        const validMime = ['image/jpeg','image/png','image/gif','image/webp'].includes(mime) ? mime : 'image/jpeg'
-        resolve({ type: 'image', source: { type: 'base64', media_type: validMime, data: base64 } })
-      } else {
-        resolve(null)
-      }
-    }
-    reader.readAsDataURL(file)
+  onStatus('Forbereder filer...')
+  const content = [{ type: 'text', text: `Jeg laster opp ${wrappedFiles.length} dokument(er) fra et fullført Ferro-prosjekt.` }]
+
+  const normalized = wrappedFiles.map(f => f.file ? f : { file: f, fileType: 'other' })
+  for (let i = 0; i < normalized.length; i++) {
+    const { file } = normalized[i]
+    onStatus(`Leser ${i + 1}/${normalized.length}: ${file.name}`)
+    const block = await fileToBlock(file)
+    if (block) content.push(block)
+  }
+
+  onStatus('Sender til Claude AI...')
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 4096,
+    system: HISTORY_EXTRACT_PROMPT,
+    messages: [{ role: 'user', content }],
   })
+
+  const text  = response.content[0].text.trim()
+  const start = text.indexOf('{')
+  const end   = text.lastIndexOf('}')
+  if (start === -1) throw new Error('AI klarte ikke å tolke dokumentene. Fyll inn feltene manuelt.')
+  return JSON.parse(text.slice(start, end + 1))
 }
 
-async function textFileToContent(file) {
-  return new Promise((resolve) => {
+// ─── File helpers ─────────────────────────────────────────────────────────────
+async function fileToBlock(file) {
+  const mime  = file.type || ''
+  const lower = file.name.toLowerCase()
+
+  if (mime === 'application/pdf' || lower.endsWith('.pdf')) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const bytes = new Uint8Array(reader.result)
+        let binary = ''
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
+        resolve({
+          type: 'document',
+          source: { type: 'base64', media_type: 'application/pdf', data: btoa(binary) },
+        })
+      }
+      reader.onerror = () => reject(new Error(`Kunne ikke lese ${file.name}`))
+      reader.readAsArrayBuffer(file)
+    })
+  }
+
+  if (mime.startsWith('image/')) {
+    return new Promise(resolve => {
+      const reader = new FileReader()
+      reader.onload = () => resolve({
+        type: 'image',
+        source: { type: 'base64', media_type: mime, data: reader.result.split(',')[1] },
+      })
+      reader.readAsDataURL(file)
+    })
+  }
+
+  if (mime.includes('spreadsheet') || mime.includes('excel') ||
+      lower.endsWith('.xlsx') || lower.endsWith('.xls')) {
+    return xlsxToBlock(file)
+  }
+
+  return new Promise(resolve => {
     const reader = new FileReader()
-    reader.onload = () => resolve({ type: 'text', text: `[Fil: ${file.name}]\n${reader.result}` })
-    reader.onerror = () => resolve({ type: 'text', text: `[Fil: ${file.name} — kunne ikke leses]` })
+    reader.onload = () => resolve({ type: 'text', text: `[${file.name}]\n${reader.result.slice(0, 8000)}` })
     reader.readAsText(file)
   })
 }
 
-function isXlsxFile(file) {
-  const mime = file.type || ''
-  const name = file.name.toLowerCase()
-  return mime.includes('spreadsheet') || mime.includes('excel') ||
-         name.endsWith('.xlsx') || name.endsWith('.xls')
-}
-
-function parseXlsxToText(arrayBuffer, fileName) {
-  try {
-    const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' })
-    const lines = [`[Excel-fil: ${fileName}]`]
-    const priority = ['Tilbud', 'Resultat', 'Prisoppsett']
-    const sortedSheets = [
-      ...priority.filter(n => wb.SheetNames.includes(n)),
-      ...wb.SheetNames.filter(n => !priority.includes(n))
-    ]
-    for (const sheetName of sortedSheets) {
-      const sheet = wb.Sheets[sheetName]
-      const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false })
-      if (!csv.trim()) continue
-      const trimmed = csv.length > 4000 ? csv.substring(0, 4000) + '\n[...resten av arket kuttet...]' : csv
-      lines.push(`\n--- Ark: ${sheetName} ---\n${trimmed}`)
-    }
-    return lines.join('\n')
-  } catch (err) {
-    return `[Excel-fil: ${fileName} — kunne ikke parse: ${err.message}]`
-  }
-}
-
-async function xlsxFileToContent(file) {
-  return new Promise((resolve) => {
+function xlsxToBlock(file) {
+  return new Promise(resolve => {
     const reader = new FileReader()
     reader.onload = () => {
-      const text = parseXlsxToText(reader.result, file.name)
-      resolve({ type: 'text', text })
+      try {
+        const wb   = XLSX.read(new Uint8Array(reader.result), { type: 'array' })
+        const prio = ['Tilbud', 'Resultat', 'Prisoppsett']
+        const sorted = [
+          ...prio.filter(n => wb.SheetNames.includes(n)),
+          ...wb.SheetNames.filter(n => !prio.includes(n)),
+        ]
+        const lines = [`[Excel: ${file.name}]`]
+        for (const name of sorted) {
+          const csv = XLSX.utils.sheet_to_csv(wb.Sheets[name], { blankrows: false })
+          if (!csv.trim()) continue
+          lines.push(`\n--- Ark: ${name} ---\n${csv.slice(0, 4000)}`)
+        }
+        resolve({ type: 'text', text: lines.join('\n') })
+      } catch (e) {
+        resolve({ type: 'text', text: `[Excel: ${file.name} — feil: ${e.message}]` })
+      }
     }
-    reader.onerror = () => resolve({ type: 'text', text: `[Excel-fil: ${file.name} — kunne ikke leses]` })
     reader.readAsArrayBuffer(file)
   })
-}
-
-// ─── JSON extraction ─────────────────────────────────────────────────────────
-function extractJSON(text) {
-  let cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '')
-  const first = cleaned.indexOf('{')
-  const last = cleaned.lastIndexOf('}')
-  if (first !== -1 && last !== -1 && last > first) {
-    cleaned = cleaned.substring(first, last + 1)
-  }
-  return cleaned.trim()
-}
-
-// ─── Batching logic ──────────────────────────────────────────────────────────
-function splitIntoBatches(wrappedFiles) {
-  const batches = []
-  let current = []
-  let currentSize = 0
-
-  const sorted = [...wrappedFiles].sort((a, b) => b.file.size - a.file.size)
-
-  for (const wrapped of sorted) {
-    const sizeMB = wrapped.file.size / 1024 / 1024
-    if (sizeMB > MAX_BATCH_SIZE_MB) {
-      if (current.length) { batches.push(current); current = []; currentSize = 0 }
-      batches.push([wrapped])
-      continue
-    }
-    if (currentSize + sizeMB > MAX_BATCH_SIZE_MB && current.length > 0) {
-      batches.push(current)
-      current = [wrapped]
-      currentSize = sizeMB
-    } else {
-      current.push(wrapped)
-      currentSize += sizeMB
-    }
-  }
-  if (current.length) batches.push(current)
-  return batches
-}
-
-// File type label for AI — tells it how to interpret the file
-function fileTypeLabel(type) {
-  return {
-    drawing: 'TEGNING',
-    supplier_tilbud: 'TILBUD FRA LEVERANDØR (innkjøpspris — må ha påslag for kunde)',
-    our_tilbud: 'VÅRT TILBUD',
-    kalk: 'KALKULASJON',
-    reference: 'REFERANSE',
-    other: 'DOKUMENT',
-  }[type] || 'DOKUMENT'
-}
-
-// ─── API call with rate-limit retry ──────────────────────────────────────────
-const sleep = (ms) => new Promise(r => setTimeout(r, ms))
-
-async function callClaude(apiKey, system, userContent, onStatus, retries = 2) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8192,
-      system,
-      messages: [{ role: 'user', content: userContent }]
-    })
-  })
-
-  if (response.status === 429 && retries > 0) {
-    const retryAfter = parseInt(response.headers.get('retry-after')) || 60
-    for (let s = retryAfter; s > 0; s--) {
-      onStatus?.(`⏳ Rate limit — venter ${s}s før retry...`)
-      await sleep(1000)
-    }
-    return callClaude(apiKey, system, userContent, onStatus, retries - 1)
-  }
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error(err.error?.message || `API-feil ${response.status}`)
-  }
-
-  const data = await response.json()
-  return data.content.filter(b => b.type === 'text').map(b => b.text).join('')
-}
-
-
-// ─── History extract prompt ───────────────────────────────────────────────────
-const HISTORY_EXTRACT_PROMPT = `Du er en erfaren kalkulatør hos Ferro Stålentreprenør AS.
-Du mottar dokumenter fra et FULLFØRT prosjekt (kalkulasjon, tilbud, tegninger).
-Din oppgave: trekk ut FAKTISKE data — ikke estimater, men reelle tall.
-
-VIKTIG:
-- xlsx kalkulasjon og "Vårt tilbud" inneholder priser TIL KUNDE (det vi fakturerte)
-- "Tilbud fra leverandør" inneholder INNKJØPSPRISER (det vi betalte til Ruukki, Storm osv.)
-- Skill disse fra hverandre!
-
-KRITISK: Returner KUN gyldig JSON. Ingen tekst utenfor. Starter med { slutter med }.
-
-{
-  "bygg": {
-    "type": "f.eks. Kaldtlager / Vaskehall / Verksted / Industribygg",
-    "dimensjoner": "f.eks. 20×12×6m",
-    "bra_m2": 240,
-    "lokasjon": "stedsnavn eller null"
-  },
-  "scope": "1-2 setninger: hva Ferro leverte på dette prosjektet",
-  "priser_til_kunde": {
-    "yttervegg": null,
-    "innervegg": null,
-    "tak": null,
-    "kran_lift": null,
-    "dorer_vinduer": null,
-    "betong": null,
-    "graving": null,
-    "sum_eks_mva": null,
-    "rigg_drift_pct": null
-  },
-  "innkjop": {
-    "stal_leverandor": null,
-    "sandwich_leverandor": null,
-    "sandwich_type": null,
-    "tak_leverandor": null
-  },
-  "merknader": "viktige detaljer, avvik, spesielle løsninger — eller null"
-}
-
-Null betyr ikke funnet. Bruk kun tall (ikke strenger) for priser.`
-
-// ─── Build feedback context (past estimate vs actual) ───────────────────────
-function buildFeedbackContext() {
-  let feedback = []
-  try {
-    const raw = localStorage.getItem('ferro_feedback_v1')
-    feedback = raw ? JSON.parse(raw) : []
-  } catch {}
-  if (!feedback.length) return ''
-
-  const lines = [
-    '',
-    '═══════════════════════════════════════════════════════════',
-    'FEEDBACK FRA TIDLIGERE ESTIMATER — KALIBRERING',
-    '═══════════════════════════════════════════════════════════',
-    'Reelle avvik mellom AI-estimat og faktisk tilbud hos Ferro:',
-    '',
-  ]
-
-  let avvikSum = 0, count = 0
-  for (const e of feedback) {
-    const aiMid = e.ai_low && e.ai_high ? Math.round((e.ai_low + e.ai_high) / 2) : null
-    const faktisk = e.faktisk_tilbud
-    let avvikStr = ''
-    if (aiMid && faktisk) {
-      const pct = Math.round(((faktisk - aiMid) / aiMid) * 100)
-      avvikStr = `(${pct > 0 ? '+' : ''}${pct}% fra AI midtpunkt)`
-      avvikSum += pct
-      count++
-    }
-    lines.push(`  ${e.name || '(ukjent)'}:`)
-    if (e.ai_low && e.ai_high) lines.push(`    AI estimat: ${e.ai_low.toLocaleString('nb-NO')} – ${e.ai_high.toLocaleString('nb-NO')} kr`)
-    lines.push(`    Faktisk tilbud: ${faktisk?.toLocaleString('nb-NO')} kr ${avvikStr}`)
-    if (e.solgt_for) lines.push(`    Solgt for: ${e.solgt_for.toLocaleString('nb-NO')} kr`)
-    if (e.kommentar) lines.push(`    Kommentar: ${e.kommentar}`)
-    lines.push('')
-  }
-
-  if (count > 0) {
-    const avg = Math.round(avvikSum / count)
-    lines.push(`Systematisk avvik over ${count} prosjekter: gjennomsnittlig ${avg > 0 ? '+' : ''}${avg}% fra AI midtpunkt.`)
-    if (avg > 3) lines.push(`→ JUSTER ESTIMATENE OPP ca. ${avg}% for å kompensere for undervurdering.`)
-    else if (avg < -3) lines.push(`→ AI har overvurdert — vær litt forsiktigere med høy-tallene.`)
-  }
-  lines.push('═══════════════════════════════════════════════════════════')
-  return lines.join('\n')
-}
-
-// ─── Build historical context ────────────────────────────────────────────────
-function buildHistoricalContext() {
-  const manualProjects = loadManualProjects()
-
-  // Map manual projects to the same shape as historiske_prosjekter entries
-  const mappedManual = manualProjects.map(p => ({
-    navn: p.navn,
-    bygg: p.bygg || {},
-    scope: p.scope,
-    priser_til_kunde: p.priser_til_kunde || {},
-    priser: p.priser_til_kunde || {},
-    innkjop_fra_leverandorer: p.innkjop || {},
-    merknader: [p.merknader, `[Manuelt lagt til ${p.dato_lagt_til}]`].filter(Boolean).join(' — '),
-    paaslag_beregnet: {},
-    detaljert_kalkulasjon: null,
-    tekniske_losninger: null,
-  }))
-
-  const allProjects = [...historiskeProsjekter, ...mappedManual]
-  if (allProjects.length === 0) return ''
-
-  const lines = [
-    '\n\n═══════════════════════════════════════════════════════════',
-    'FERRO HISTORISKE PROSJEKTER — DIN VIKTIGSTE KALIBRERING',
-    '═══════════════════════════════════════════════════════════',
-    '',
-    'REGEL: Finn det MEST LIGNENDE prosjektet i listen nedenfor basert på:',
-    '  - Byggtype (vaskehall, lager, verksted, industribygg)',
-    '  - Størrelse (m² og dimensjoner)',
-    '  - Scope (hva Ferro leverte)',
-    'Bruk det som hovedreferanse for pris. Juster for forskjeller.',
-    ''
-  ]
-
-  allProjects.forEach((p, i) => {
-    const bygg = p.bygg || {}
-    const priser = p.priser_til_kunde || p.priser || {}
-    const innkjop = p.innkjop_fra_leverandorer || {}
-    const paaslag = p.paaslag_beregnet || {}
-
-    lines.push(`──── ${i + 1}. ${p.navn} ────`)
-
-    // Building specs
-    const parts = []
-    if (bygg.type) parts.push(bygg.type)
-    if (bygg.dimensjoner) parts.push(bygg.dimensjoner)
-    if (bygg.bra_m2) parts.push(`${bygg.bra_m2} m² BRA`)
-    if (bygg.fasade_m2) parts.push(`${bygg.fasade_m2} m² fasade`)
-    if (bygg.tak_m2) parts.push(`${bygg.tak_m2} m² tak`)
-    if (bygg.lokasjon) parts.push(bygg.lokasjon)
-    if (parts.length) lines.push(`  Bygg: ${parts.join(', ')}`)
-
-    if (p.scope) lines.push(`  Scope: ${p.scope}`)
-    if (p.tekniske_losninger) lines.push(`  Tekniske løsninger: ${p.tekniske_losninger}`)
-
-    // Customer prices
-    const custPrices = []
-    if (priser.stal) custPrices.push(`stål ${priser.stal.toLocaleString('nb-NO')}`)
-    if (priser.yttervegg) custPrices.push(`yttervegg ${priser.yttervegg.toLocaleString('nb-NO')}`)
-    if (priser.innervegg) custPrices.push(`innervegg ${priser.innervegg.toLocaleString('nb-NO')}`)
-    if (priser.tak) custPrices.push(`tak ${priser.tak.toLocaleString('nb-NO')}`)
-    if (priser.kran_lift) custPrices.push(`kran/lift ${priser.kran_lift.toLocaleString('nb-NO')}`)
-    if (priser.dorer_vinduer) custPrices.push(`dører/vinduer ${priser.dorer_vinduer.toLocaleString('nb-NO')}`)
-    if (priser.betong) custPrices.push(`betong ${priser.betong.toLocaleString('nb-NO')}`)
-    if (priser.graving) custPrices.push(`graving ${priser.graving.toLocaleString('nb-NO')}`)
-    if (custPrices.length) lines.push(`  Priser til kunde (kr): ${custPrices.join(', ')}`)
-    if (priser.sum_eks_mva) lines.push(`  SUM EKS MVA: ${priser.sum_eks_mva.toLocaleString('nb-NO')} kr`)
-    if (priser.rigg_drift_pct) lines.push(`  Rigg og drift: ${priser.rigg_drift_pct}%`)
-
-    // Supplier / purchase data — shows pricing logic
-    const innkjopParts = []
-    if (innkjop.stal_leverandor) innkjopParts.push(`stål: ${innkjop.stal_leverandor}`)
-    if (innkjop.stal_innkjop_kr) innkjopParts.push(`stål innkjøp ${innkjop.stal_innkjop_kr.toLocaleString('nb-NO')}`)
-    if (innkjop.sandwich_leverandor) innkjopParts.push(`sandwich: ${innkjop.sandwich_leverandor}`)
-    if (innkjop.sandwich_type) innkjopParts.push(`type ${innkjop.sandwich_type}`)
-    if (innkjop.sandwich_innkjop_kr) innkjopParts.push(`sandwich innkjøp ${innkjop.sandwich_innkjop_kr.toLocaleString('nb-NO')}`)
-    if (innkjop.tak_leverandor) innkjopParts.push(`tak: ${innkjop.tak_leverandor}`)
-    if (innkjop.andre_ue) innkjopParts.push(`UE: ${innkjop.andre_ue}`)
-    if (innkjopParts.length) lines.push(`  Innkjøp: ${innkjopParts.join(' | ')}`)
-
-    // Calculated markups — learning material
-    if (paaslag.stal_paslag || paaslag.sandwich_paslag) {
-      const p1 = []
-      if (paaslag.stal_paslag) p1.push(`stål ×${paaslag.stal_paslag}`)
-      if (paaslag.sandwich_paslag) p1.push(`sandwich ×${paaslag.sandwich_paslag}`)
-      lines.push(`  Påslag brukt: ${p1.join(', ')}`)
-    }
-    if (paaslag.kommentar) lines.push(`  Påslag-logikk: ${paaslag.kommentar}`)
-
-    if (p.merknader) lines.push(`  Merknader: ${p.merknader}`)
-
-    // Detailed calculation breakdown (NEW — from deep xlsx scan)
-    if (p.detaljert_kalkulasjon?.blokker) {
-      lines.push(`  📊 DETALJERT KALKULASJON:`)
-      const blokker = p.detaljert_kalkulasjon.blokker
-      for (const [blokk, data] of Object.entries(blokker)) {
-        if (!data?.poster || data.poster.length === 0) continue
-        lines.push(`     ${blokk.toUpperCase()} (total ${data.total_kr?.toLocaleString('nb-NO') || '?'} kr):`)
-        for (const post of data.poster) {
-          const mengde = post.mengde ? `${post.mengde} ${post.enhet || ''}` : ''
-          const pris = post.enhetspris ? `à ${post.enhetspris} kr` : ''
-          const sum = post.sum ? `= ${post.sum.toLocaleString('nb-NO')} kr` : ''
-          lines.push(`       · ${post.navn}: ${mengde} ${pris} ${sum}`.trim())
-        }
-      }
-    }
-
-    lines.push('')
-  })
-
-  lines.push('═══════════════════════════════════════════════════════════')
-  lines.push('INSTRUKSJON FOR PRISSETTING:')
-  lines.push('1. Identifiser hvilket historisk prosjekt som ligner MEST på det nye')
-  lines.push('2. Bruk dets priser som utgangspunkt')
-  lines.push('3. Juster opp/ned basert på m², kompleksitet, scope-forskjeller')
-  lines.push('4. Påslag-logikken viser hvordan Ferro pricer materialer')
-  lines.push('5. Oppgi i "basis" HVILKET historisk prosjekt du sammenlignet med')
-  lines.push('')
-  lines.push('KRITISK — BRUK DETALJERT KALKULASJON:')
-  lines.push('Når du ser "📊 DETALJERT KALKULASJON" — det er FULLSTENDIG prisstruktur.')
-  lines.push('Eks: "tak" består av takplater + montering + festemateriell + overgangsbeslag + tekkebeslag.')
-  lines.push('Når du priser "tak"-blokken, sum ALLE disse underpostene — ikke bare materialet.')
-  lines.push('Hvis leverandørtilbud dekker kun materiale (f.eks. takplater), LEGG TIL:')
-  lines.push('  - Montering (~130 kr/m²)')
-  lines.push('  - Festemateriell (~115 kr/m²)')
-  lines.push('  - Beslag (~290 kr/lm)')
-  lines.push('Ellers blir prisen 40-50% for lav.')
-  lines.push('═══════════════════════════════════════════════════════════\n')
-
-  return lines.join('\n')
-}
-
-// ─── Main export ─────────────────────────────────────────────────────────────
-export async function analyzeProject(wrappedFiles, extraInfo, apiKey, onStatus) {
-  onStatus('Forbereder filer...')
-
-  // Support both old format (File[]) and new ({file, fileType}[])
-  const normalized = wrappedFiles.map(f => f.file ? f : { file: f, fileType: 'other' })
-
-  const totalMB = normalized.reduce((s, w) => s + w.file.size, 0) / 1024 / 1024
-  const useBatching = totalMB > SINGLE_CALL_LIMIT_MB && normalized.length > 1
-
-  if (!useBatching) {
-    return await analyzeSingleCall(normalized, extraInfo, apiKey, onStatus)
-  }
-
-  // Batched analysis
-  const batches = splitIntoBatches(normalized)
-  onStatus(`📦 Stort prosjekt (${totalMB.toFixed(1)} MB) — deler opp i ${batches.length} batcher`)
-  await sleep(1200)
-
-  const summaries = []
-
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i]
-    const batchMB = batch.reduce((s, w) => s + w.file.size, 0) / 1024 / 1024
-
-    onStatus(`Batch ${i + 1}/${batches.length}: leser ${batch.length} fil(er) (${batchMB.toFixed(1)} MB)...`)
-
-    const content = [{
-      type: 'text',
-      text: `Dette er batch ${i + 1} av ${batches.length} fra samme prosjekt. Ekstrahér fakta som kan brukes til kalkulasjon.`
-    }]
-
-    for (const wrapped of batch) {
-      const file = wrapped.file
-      const mime = file.type || ''
-      let block
-      if (mime === 'application/pdf' || mime.startsWith('image/')) {
-        block = await fileToContent(file)
-      } else if (isXlsxFile(file)) {
-        block = await xlsxFileToContent(file)
-      } else {
-        block = await textFileToContent(file)
-      }
-      if (block) {
-        content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${file.name} ---` })
-        content.push(block)
-      }
-    }
-
-    onStatus(`Batch ${i + 1}/${batches.length}: sender til Claude AI...`)
-    const rawText = await callClaude(apiKey, BATCH_SUMMARY_PROMPT, content, onStatus)
-    summaries.push({
-      batchIndex: i + 1,
-      fileNames: batch.map(w => w.file.name),
-      summary: extractJSON(rawText)
-    })
-
-    if (i < batches.length - 1) {
-      const waitSec = BATCH_PAUSE_MS / 1000
-      for (let s = waitSec; s > 0; s--) {
-        onStatus(`⏳ Venter ${s}s før neste batch (rate limit)...`)
-        await sleep(1000)
-      }
-    }
-  }
-
-  // Merge
-  onStatus(`🔀 Konsoliderer ${summaries.length} sammendrag til endelig estimat...`)
-
-  const historicalContext = buildHistoricalContext()
-  const feedbackContext = buildFeedbackContext()
-  const mergeText = `Her er sammendrag fra ${summaries.length} batcher fra samme prosjekt:
-
-${summaries.map(s => `=== BATCH ${s.batchIndex} (filer: ${s.fileNames.join(', ')}) ===\n${s.summary}`).join('\n\n')}
-${extraInfo ? `\nTilleggsinformasjon fra bruker:\n${extraInfo}\n` : ''}${feedbackContext}${historicalContext}
-Lag et helhetlig prisestimat basert på ALL informasjonen over.`
-
-  const finalRaw = await callClaude(apiKey, MERGE_SYSTEM_PROMPT, [{ type: 'text', text: mergeText }], onStatus)
-  return parseAndValidate(finalRaw)
-}
-
-// ─── Single-call path ────────────────────────────────────────────────────────
-async function analyzeSingleCall(wrappedFiles, extraInfo, apiKey, onStatus) {
-  const historicalContext = buildHistoricalContext()
-  const feedbackContext = buildFeedbackContext()
-  const content = [{
-    type: 'text',
-    text: `Jeg laster opp ${wrappedFiles.length} prosjektdokument(er) for analyse.${extraInfo ? `\n\nTilleggsinformasjon:\n${extraInfo}` : ''}${feedbackContext}${historicalContext}\n\nAnalyser dokumentene og gi et grovt prisestimat per arbeidsblokk.`
-  }]
-
-  for (let i = 0; i < wrappedFiles.length; i++) {
-    const wrapped = wrappedFiles[i]
-    const file = wrapped.file
-    onStatus(`Leser fil ${i + 1}/${wrappedFiles.length}: ${file.name}`)
-    const mime = file.type || ''
-    let block
-    if (mime === 'application/pdf' || mime.startsWith('image/')) {
-      block = await fileToContent(file)
-    } else if (isXlsxFile(file)) {
-      block = await xlsxFileToContent(file)
-    } else {
-      block = await textFileToContent(file)
-    }
-    if (block) {
-      content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${file.name} ---` })
-      content.push(block)
-    }
-  }
-
-  onStatus('Sender til Claude AI...')
-  const rawText = await callClaude(apiKey, FULL_SYSTEM_PROMPT, content, onStatus)
-  return parseAndValidate(rawText)
-}
-
-// ─── Extract history from completed project files ────────────────────────────
-export async function extractProjectHistory(wrappedFiles, apiKey, onStatus) {
-  onStatus('Forbereder filer...')
-
-  const totalMB = wrappedFiles.reduce((s, w) => s + w.file.size, 0) / 1024 / 1024
-  const useBatching = totalMB > SINGLE_CALL_LIMIT_MB && wrappedFiles.length > 1
-
-  const content = [{
-    type: 'text',
-    text: `Jeg laster opp ${wrappedFiles.length} dokument(er) fra et FULLFØRT Ferro-prosjekt. Trekk ut faktiske data.`
-  }]
-
-  if (useBatching) {
-    // For large uploads: just take first batch (history extract doesn't need all files)
-    const batches = splitIntoBatches(wrappedFiles)
-    const firstBatch = batches[0]
-    onStatus(`Leser ${firstBatch.length} fil(er)...`)
-    for (const wrapped of firstBatch) {
-      const f = wrapped.file
-      const block = f.type === 'application/pdf' || f.type?.startsWith('image/')
-        ? await fileToContent(f)
-        : isXlsxFile(f) ? await xlsxFileToContent(f) : await textFileToContent(f)
-      if (block) {
-        content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${f.name} ---` })
-        content.push(block)
-      }
-    }
-    if (batches.length > 1) {
-      // Add remaining batches sequentially (no pause needed — extract is read-only)
-      for (let i = 1; i < batches.length; i++) {
-        onStatus(`Leser batch ${i + 1}/${batches.length}...`)
-        for (const wrapped of batches[i]) {
-          const f = wrapped.file
-          const block = f.type === 'application/pdf' || f.type?.startsWith('image/')
-            ? await fileToContent(f)
-            : isXlsxFile(f) ? await xlsxFileToContent(f) : await textFileToContent(f)
-          if (block) {
-            content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${f.name} ---` })
-            content.push(block)
-          }
-        }
-      }
-    }
-  } else {
-    for (let i = 0; i < wrappedFiles.length; i++) {
-      const wrapped = wrappedFiles[i]
-      onStatus(`Leser fil ${i + 1}/${wrappedFiles.length}: ${wrapped.file.name}`)
-      const f = wrapped.file
-      const block = f.type === 'application/pdf' || f.type?.startsWith('image/')
-        ? await fileToContent(f)
-        : isXlsxFile(f) ? await xlsxFileToContent(f) : await textFileToContent(f)
-      if (block) {
-        content.push({ type: 'text', text: `\n--- [${fileTypeLabel(wrapped.fileType)}] ${f.name} ---` })
-        content.push(block)
-      }
-    }
-  }
-
-  onStatus('Sender til Claude AI...')
-  const rawText = await callClaude(apiKey, HISTORY_EXTRACT_PROMPT, content, onStatus)
-  const cleaned = extractJSON(rawText)
-  try {
-    return JSON.parse(cleaned)
-  } catch {
-    throw new Error('AI klarte ikke å tolke dokumentene. Fyll inn feltene manuelt.')
-  }
-}
-
-function parseAndValidate(rawText) {
-  const cleaned = extractJSON(rawText)
-  let parsed
-  try {
-    parsed = JSON.parse(cleaned)
-  } catch {
-    console.error('JSON failed. Raw:', rawText)
-    throw new Error('AI svarte ikke med gyldig JSON. Prøv igjen.')
-  }
-
-  if (!parsed.blocks || !Array.isArray(parsed.blocks)) {
-    throw new Error('AI-svar mangler arbeidsblokker. Prøv igjen.')
-  }
-
-  if (!parsed.total_low || !parsed.total_high) {
-    const inc = (parsed.blocks || []).filter(b => b.included)
-    parsed.total_low = inc.reduce((s, b) => s + (b.price_low || 0), 0)
-    parsed.total_high = inc.reduce((s, b) => s + (b.price_high || 0), 0)
-  }
-  return parsed
 }

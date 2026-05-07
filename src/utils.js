@@ -1,3 +1,16 @@
+export function detectFileType(name) {
+  const n = name.toLowerCase()
+  if (n.includes('tilbud') || n.includes('pristilbud') || n.includes('tilbudsbrev')) return 'supplier_tilbud'
+  if (n.match(/\b(ark|a20|a30|a40|a41|plan|snitt|fasad|tegning|drawing)\b/)) return 'drawing'
+  if (n.endsWith('.xlsx') || n.endsWith('.xls')) return 'kalk'
+  return 'other'
+}
+
+export const FILE_TYPE_LABELS = {
+  nb: { drawing: 'Tegning', supplier_tilbud: 'Leverandør-tilbud', our_tilbud: 'Vårt tilbud', kalk: 'Kalkulasjon', reference: 'Referanse', other: 'Annet' },
+  uk: { drawing: 'Креслення', supplier_tilbud: 'Тендер постачальника', our_tilbud: 'Наш тендер', kalk: 'Калькуляція', reference: 'Референс', other: 'Інше' },
+}
+
 const STORAGE_KEY = 'ferro_project_v2'
 const API_KEY_STORAGE = 'ferro_anthropic_key'
 const SIGNER_STORAGE = 'ferro_signer'

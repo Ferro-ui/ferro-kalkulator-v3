@@ -4,7 +4,7 @@
 export const translations = {
   nb: {
     // Header
-    appTitle: 'Prosjektestimat',
+    appTitle: 'Budsjettpris',
     appSubtitle: 'Last opp dokumenter → AI analyserer → Prisintervall + .docx budsjettpris',
     nullstill: 'Nullstill',
     apiKeyOk: 'API OK',
@@ -20,6 +20,7 @@ export const translations = {
     projectNamePlaceholder: 'Prosjektnavn...',
 
     // Upload zone
+    sectionFiles: 'Filer',
     uploadTitle: 'Dra prosjektfiler hit',
     uploadSubtitle: 'Tilbud, tegninger, bilder, kalkulasjoner · PDF, JPG, PNG, XLSX',
 
@@ -131,6 +132,7 @@ export const translations = {
     projectNamePlaceholder: 'Назва проєкту...',
 
     // Upload zone
+    sectionFiles: 'Файли',
     uploadTitle: 'Перетягніть файли проєкту сюди',
     uploadSubtitle: 'Тендери, креслення, фото, калькуляції · PDF, JPG, PNG, XLSX',
 
