@@ -5,6 +5,7 @@ import {
   saveApiKey, loadApiKey,
   exportSummary,
   detectFileType,
+  loadManualProjects,
 } from '../utils'
 import { t } from '../translations'
 
@@ -60,7 +61,8 @@ export function useProject() {
     if (files.length === 0 && !extraInfo.trim()) { setError(t('errAddFiles')); return }
     setAnalyzing(true); setError(''); setResult(null); setBlocks([])
     try {
-      const res = await analyzeProject(files, extraInfo, apiKey, setStatus)
+      const history = loadManualProjects()
+      const res = await analyzeProject(files, extraInfo, apiKey, setStatus, history)
       setResult(res)
       const enrichedBlocks = (res.blocks || [])
         .filter(b => b.included)

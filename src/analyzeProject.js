@@ -57,17 +57,44 @@ Regler:
 - confidence=high hvis dimensjoner er klart lesbare fra tegning
 - Aldri gjet priser — returner INGEN prisfelt
 - scope_items gyldige verdier: stål, yttervegg, innervegg, tak, dorer_vinduer, kran_lift, betong, graving
-- scope_items: bare blokker Ferro faktisk skal levere (stål er typisk Ferro-leveranse)`
+- scope_items: bare blokker Ferro faktisk skal levere (stål er typisk Ferro-leveranse)
+- Hvis HISTORISKE FERRO-PROSJEKTER er oppgitt ovenfor: bruk dem som referanse for scope_items og materialvalg på lignende byggetyper, men baser dimensjoner og fakta utelukkende på vedlagte dokumenter`
+
+// ─── History context formatter ────────────────────────────────────────────────
+function formatHistoryContext(projects) {
+  if (!projects?.length) return null
+  const lines = [
+    'HISTORISKE FERRO-PROSJEKTER (bruk som referanse for å forstå typisk scope, materialvalg og prisnivå):',
+  ]
+  for (const p of projects) {
+    const b  = p.bygg || {}
+    const pr = p.priser_til_kunde || {}
+    const bygInfo = [b.type, b.dimensjoner, b.bra_m2 ? b.bra_m2 + 'm²' : null, b.lokasjon].filter(Boolean).join(' · ')
+    const priceFields = [
+      ['Yttervegg', pr.yttervegg], ['Innervegg', pr.innervegg], ['Tak', pr.tak],
+      ['Kran/lift', pr.kran_lift], ['Dører/vinduer', pr.dorer_vinduer],
+      ['Betong', pr.betong], ['Graving', pr.graving], ['SUM eks.mva', pr.sum_eks_mva],
+    ].filter(([, v]) => v != null).map(([k, v]) => `${k}: ${Number(v).toLocaleString('nb-NO')} kr`).join(', ')
+    lines.push(
+      `• ${p.navn} (${p.dato_lagt_til || ''})` +
+      (bygInfo     ? `\n  Bygg: ${bygInfo}` : '') +
+      (p.scope     ? `\n  Scope: ${p.scope}` : '') +
+      (priceFields ? `\n  Priser: ${priceFields}` : '') +
+      (p.merknader ? `\n  Merknader: ${p.merknader}` : ''),
+    )
+  }
+  return lines.join('\n\n')
+}
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-export async function analyzeProject(wrappedFiles, extraInfo, apiKey, onStatus) {
+export async function analyzeProject(wrappedFiles, extraInfo, apiKey, onStatus, historyData) {
   if (BASE_URL) {
     return analyzeViaBackend(wrappedFiles, extraInfo, onStatus)
   }
   if (!apiKey) {
     throw new Error('Legg inn Anthropic API-nøkkel (🔑-knappen) for å bruke AI-analyse.')
   }
-  return analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus)
+  return analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus, historyData)
 }
 
 // ─── Backend path ─────────────────────────────────────────────────────────────
@@ -107,7 +134,7 @@ async function analyzeViaBackend(wrappedFiles, extraInfo, onStatus) {
 }
 
 // ─── Browser-direct path ──────────────────────────────────────────────────────
-async function analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus) {
+async function analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus, historyData) {
   const client     = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
   const normalized = wrappedFiles.map(f => f.file ? f : { file: f, fileType: 'other' })
 
@@ -122,6 +149,8 @@ async function analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus) {
     const block = await fileToBlock(file)
     if (block) content.push(block)
   }
+  const histCtx = formatHistoryContext(historyData)
+  if (histCtx) content.push({ type: 'text', text: histCtx })
   content.push({ type: 'text', text: EXTRACTION_PROMPT })
 
   onStatus('Sender til Claude AI...')
