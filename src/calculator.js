@@ -7,6 +7,18 @@
 //   3. calibrateRate(block, similar, fallback) — weighted median from similar projects
 //   4. calculatePrices(facts, history) — main export
 
+// ── Brannkrav multiplier — applied on top of base stål rate ──────────────────
+// Brannisolasjon (Isover FireProtect / Conlitt) adds real cost to steel frame.
+// Based on actual Ferro projects: Firesafe costs range 138k–450k for 500–1500m².
+const BRANN_FACTOR = {
+  ingen:   1.00,  // Uisolert stål — kaldtlager, småbygg RKL1
+  R15:     1.05,  // Bare maling/primer P1 — minimal kostnad
+  R30:     1.18,  // Brannisolasjon søyler/bjelker — typisk lager >1000m²
+  R60:     1.28,  // Tykkere isolasjon — verksted, vaskehall, kontorbygg
+  R120:    1.40,  // Hulldekke, messanin, krav etasjeskille
+  ukjent:  1.12,  // Default: anta noe brannisolasjon for ukjente prosjekter
+}
+
 // ── Fallback rates (updated to match real 2024–2026 Ferro project medians) ────
 // These are used only when no historical projects match (no history passed).
 const FALLBACK_RATES = {
@@ -160,20 +172,30 @@ export function calculatePrices(facts, history) {
     const { rate, refs, source } = calibrateRate('stal_per_bra', similar, FALLBACK_RATES.stal_per_bra)
     const conf     = facts.bra_m2 ? 'medium' : 'low'
     const paslag   = 15
-    // Stål innkjøp includes material + montasje (Ferro adds markup on top of supplier price)
-    const innkjop  = Math.round(bra * rate / (1 + paslag / 100))
+
+    // Brannkrav: apply multiplier to base stål rate
+    const brann    = facts.brannkrav || {}
+    const brannKey = brann.stal_brannkrav || 'ukjent'
+    const brannF   = BRANN_FACTOR[brannKey] ?? BRANN_FACTOR.ukjent
+    const adjRate  = Math.round(rate * brannF)
+    const innkjop  = Math.round(bra * adjRate / (1 + paslag / 100))
     const refsStr  = refs.length ? `Referanser: ${refs.slice(0,3).join(', ')}.` : refNote
+
+    const brannNote = brannF !== 1.00
+      ? `Brannkrav ${brannKey} → stålrate justert ×${brannF} (${rate} → ${adjRate} kr/m²).`
+      : `Ingen brannisolasjon (${brannKey}).`
+
     blocks.push(makeBlock(
       'stål', 'Stålkonstruksjon (ramme, søyler, åsar)',
-      bra * rate / (1 + paslag / 100),
+      bra * adjRate / (1 + paslag / 100),
       conf, paslag,
-      `${bra} m² BRA × ${rate} kr/m² = innkjøp ca. ${innkjop.toLocaleString('nb-NO')} kr. ${refsStr} ` +
-      `NB: stål-pris inkluderer leverandørens montasjepris. Salgspris til kunde inkl. ${paslag}% Ferro-margin.`,
+      `${bra} m² BRA × ${adjRate} kr/m² = innkjøp ca. ${innkjop.toLocaleString('nb-NO')} kr. ` +
+      `${brannNote} ${refsStr}`,
       [
         `${bra} m² BRA brukt som grunnlag`,
-        `Rate ${rate} kr/m² (${source === 'history' ? 'historisk kalibr.' : 'fallback-sats'})`,
-        'Ferro kjøper komplettstål inkl. prosjektering og frakt',
-        'Montasje er inkludert i tilbud fra stålleverandør',
+        `Basisrate ${rate} kr/m² (${source === 'history' ? 'historisk kalibr.' : 'fallback'})`,
+        `Brannfaktor ×${brannF} for krav: ${brannKey}`,
+        brann.kommentar || 'Brannkrav: ' + (brann.kilde || 'ukjent kilde'),
       ],
       facts.bra_m2 ? [] : ['bra_m2 ikke funnet — bruker 300 m² som estimat']
     ))

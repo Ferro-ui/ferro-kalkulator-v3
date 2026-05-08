@@ -77,7 +77,46 @@ PORTER OG DØRER — tell fra plantegning og fasadetegning:
   Persondør: standard 0.9m × 2.1m
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STEG 3 — VURDER SCOPE (hva skal Ferro levere)
+STEG 3 — BRANNKRAV OG KONSEPT (kritisk for kostnad)
+
+BRANNKRAV — påvirker stålpris direkte (brannisolasjon = +15–30% på stål):
+
+Les brannkrav fra:
+  • Tittelblokk på tegning: "Risikoklasse X, Brannklasse Y"
+  • Brannkonsept-dokument (PDF): R-krav på søyler, bjelker, etasjeskille
+  • Stykkliste: "RAL 7000 P1" = primert stål = trolig R15/ingen brannisolasjon
+  • "Brannisolert R30" = brannisolasjon (Isover FireProtect / Conlitt) påkrevd
+  • RIBr (rådgivende ingeniør brann) nevnt = brannkonsulent = R30+ prosjekt
+
+BRANNKONSEPT GIR OGSÅ MATERIALVALG — hent fra PDF hvis tilstede:
+  • Vegger: EI-verdi (f.eks. EI 60, EI 120) → hvilken sandwichpanel som trengs
+    EI 30: PIR 120mm kan brukes | EI 60: Steinull 150mm+ | EI 120: Steinull 200mm
+  • Tak: hvilken isolasjon og dampsperre er påkrevd
+  • Søyler: Conlitt / Isover FireProtect tykkelse for R30/R60
+  • Hulldekke: R60/R90 krav (gjelder messanin og etasjeskille)
+  Sett materialer.sandwich_type og materialer.tak_type ut fra brannkrav hvis ikke
+  eksplisitt oppgitt i stykkliste.
+
+Hvis brannkrav IKKE er oppgitt — utled fra bygningstype og størrelse:
+  Lager < 1000 m², 1 etg, RKL 1 → brannkrav: "ingen_spesifisert" (typisk R15 eller ubeskyttet)
+  Lager > 1000 m² eller 2 etg    → brannkrav: "R30" (nesten alltid)
+  Vaskehall med kjøretøy          → brannkrav: "R30" (risikoklasse 2)
+  Verksted med mange ansatte      → brannkrav: "R30–R60"
+  Kontorbygg / publikum           → brannkrav: "R60+" (risikoklasse 3+)
+  Messanin / hulldekke            → brannkrav: "R60–R90" på hulldekke
+
+KONSEPT — hva slags leveranse er dette:
+  Stålentreprise: Ferro gjør bare stål + kledning, andre gjør betong/graving/elektro
+  Totalentreprise: Ferro tar hele bygget inkl. betong, graving, porter, elektro
+  Undertilbud: Ferro leverer til en annen HE (ikke direkte til byggherre)
+
+Les konsept fra:
+  • Tilleggsinformasjon fra bruker ("Vi leverer stål, betong er UE" = stålentreprise)
+  • Anbudsdokument ("totalentreprise nøkkelferdig" = totalentreprise)
+  • Historiske prosjekter med lignende bygg
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEG 4 — VURDER SCOPE (hva skal Ferro levere)
 
 Ferro er stålentreprenør. Standard Ferro-leveranse:
   ✓ stål — alltid med (ramme, søyler, åsar, sekundærstål)
@@ -93,7 +132,7 @@ Bruk TILLEGGSINFORMASJON fra bruker som primærkilde for scope.
 Bruk historiske prosjekter (hvis oppgitt) for å forstå typisk scope for denne bygningstypen.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STEG 4 — HÅNDTER UFULLSTENDIGE DOKUMENTER
+STEG 5 — HÅNDTER UFULLSTENDIGE DOKUMENTER
 
 Tegninger er fra ULIKE arkitekter — ingen standardisert stil.
 Ikke alle tegninger har alle mål eksplisitt.
@@ -133,6 +172,18 @@ RETURNER BARE DETTE JSON-OBJEKTET:
     "vinduer_stk": null
   },
   "scope_items": ["stål","yttervegg","tak","kran_lift"],
+  "brannkrav": {
+    "risikoklasse": "1|2|3|null",
+    "brannklasse": "1|2|3|null",
+    "stal_brannkrav": "ingen|R15|R30|R60|R120|ukjent",
+    "brannisolasjon_paakrevd": true,
+    "kilde": "fra_tegning|utledet_fra_type|ikke_oppgitt",
+    "kommentar": "f.eks. 'Tittelblokk: RKL 2 BKL 1, søyler R30' eller 'Utledet: lager >1000m² → R30'"
+  },
+  "konsept": {
+    "type": "stalentreprise|totalentreprise|undertilbud|ukjent",
+    "beskrivelse": "kort: hva Ferro leverer vs hva som er UE/ikke inkludert"
+  },
   "lokasjon": "by/sted eller null",
   "confidence": "high|medium|low",
   "beregning_notater": "kort forklaring: hvordan dimensjoner ble beregnet, f.eks. '6 spenn × 5000mm = 30m'",
@@ -144,7 +195,10 @@ REGLER:
 - Vis regnestykket i "beregning_notater"
 - scope_items: kun det Ferro faktisk skal levere (fra tilleggsinformasjon eller klart fra dokumenter)
 - Aldri returner prisfelt — bare fakta og mål
-- scope_items gyldige verdier: stål, yttervegg, innervegg, tak, dorer_vinduer, kran_lift, betong, graving`
+- scope_items gyldige verdier: stål, yttervegg, innervegg, tak, dorer_vinduer, kran_lift, betong, graving
+- brannkrav.stal_brannkrav: ALLTID fyll inn — utled fra type/størrelse hvis ikke oppgitt
+- brannkrav.brannisolasjon_paakrevd: true hvis R30 eller høyere på søyler/bjelker
+- konsept.type: utled fra tilleggsinformasjon + typisk for bygningstypen`
 
 // ─── History context formatter ────────────────────────────────────────────────
 function formatHistoryContext(projects) {
@@ -178,10 +232,25 @@ function formatHistoryContext(projects) {
     if (bra   && pr.kran_lift) rates.push(`kran/lift ${Math.round(pr.kran_lift/bra)} kr/m²BRA`)
     if (bra   && pr.betong)    rates.push(`betong ${Math.round(pr.betong/bra)} kr/m²`)
 
+    // Brann + konsept
+    const brannInfo = []
+    const tl = (p.tekniske_losninger || '').toLowerCase()
+    if (tl.includes('r120')) brannInfo.push('R120')
+    else if (tl.includes('r60')) brannInfo.push('R60')
+    else if (tl.includes('r30')) brannInfo.push('R30')
+    else if (tl.includes('r15')) brannInfo.push('R15')
+    else if (tl.includes('ingen brann') || tl.includes('uisolert')) brannInfo.push('ingen brannisolasjon')
+    const konseptInfo = p.scope ? (
+      p.scope.toLowerCase().includes('totalentreprise') ? 'totalentreprise' :
+      p.scope.toLowerCase().includes('undertilbud') ? 'undertilbud' : 'stålentreprise'
+    ) : null
+
     // Supplier / material type
     const matInfo = [
       inn.sandwich_type ? `panel: ${inn.sandwich_type}` : null,
       inn.stal_leverandor ? `stål: ${inn.stal_leverandor.split('—')[0].trim()}` : null,
+      brannInfo.length ? `brann: ${brannInfo.join('/')}` : null,
+      konseptInfo ? `konsept: ${konseptInfo}` : null,
     ].filter(Boolean).join(', ')
 
     lines.push(
