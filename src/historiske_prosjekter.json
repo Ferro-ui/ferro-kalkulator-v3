@@ -1920,16 +1920,25 @@
       "stal_leverandor": "Ståleriet AS, Sandefjord — tilbud T202641 datert 07.03.2026. Pos 1 produksjon/prosjektering/transport/maling: kr 385 000. Pos 2 montasje inkl. kran/Manitou/lift/RSK: kr 135 000. Totalt innkjøp stål+montasje: kr 520 000. Merk: Excel viser innkjøp kr 555 000 for stålkonstruksjonen samlet.",
       "stal_innkjop_kr": 555000,
       "sandwich_leverandor": "Tata Steel Norway Byggsystemer AS, Skien — tilbud 51676 datert 05.03.2026. Fasadeplate 18W.1070 0,50mm Polyester C3: 500 m² à kr 89 = kr 44 500. Veggrigler Z150 galv: 555 lm à kr 83 = kr 46 065. Takplate Høyprofil 128R.930 galv: 624 m² à kr 206 = kr 128 544. Tillegg interiør 15µm RAL9002: kr 21/m². Leggeplan/dokumentasjon: kr 2 000. Frakt Skien–Rauland: kr 12 290. Netto total Tata Steel: kr 233 399. Alternativt tilbud fra Ruukki (tilbud 260371): TRP T130M-75L-930 galv: 624 m² à kr 256 + tillegg interiør kr 16/m²; veggplate T20-72-190 460 m² à kr 160; Z-rigler 580 lm à kr 82. Ferro valgte Tata Steel som leverandør.",
-      "sandwich_innkjop_kr": 233399,
+      "sandwich_innkjop_kr": 343810,
       "sandwich_type": "Fasadeplate: 18W.1070 trapesprofil 0,50mm polyesterbelagt C3, montert vertikalt på Z150 galvaniserte rigler. Tak: selvbærende TRP høyprofil 128R.930 galvanisert (Tata Steel), alternativt T130M-75L-930 galv (Ruukki). Uisolert konstruksjon — kaldtlager.",
       "tak_leverandor": "Tata Steel Norway (se sandwich_leverandor) — takplate 624 m² à kr 206 = kr 128 544. Excel viser innkjøpspris kr 300/m² for selvbærende takplater (inkluderer trolig montering og tillegg). Ruukki som alternativ: kr 256/m² + kr 16/m² tillegg.",
-      "tak_innkjop_kr": 128544,
-      "andre_ue": "Porter: ASSA ABLOY / Crawford OH1042P manuell leddheiseport 3500×3500mm — innkjøpspris kr 44 000 inkl. montasje og frakt (tilbud PQ-002482491-0 datert 25.02.2026). Kran/Manitou: 30 dager à kr 2 200/dag innkjøp = kr 66 000 + transport kr 20 000. Terrenggående lift: 40 dager à kr 650/dag innkjøp = kr 26 000 + transport kr 20 000. Liten lift transport: kr 8 000. Frakt takplater/sandwich: kr 10 000 innkjøp."
+      "tak_innkjop_kr": 385660,
+      "andre_ue": "Porter: ASSA ABLOY / Crawford OH1042P manuell leddheiseport 3500×3500mm — innkjøpspris kr 44 000 inkl. montasje og frakt (tilbud PQ-002482491-0 datert 25.02.2026). Kran/Manitou: 30 dager à kr 2 200/dag innkjøp = kr 66 000 + transport kr 20 000. Terrenggående lift: 40 dager à kr 650/dag innkjøp = kr 26 000 + transport kr 20 000. Liten lift transport: kr 8 000. Frakt takplater/sandwich: kr 10 000 innkjøp.",
+      "kran_lift_innkjop_kr": 140000,
+      "porter_innkjop_kr": 44000
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.17 (17% påslag) — innkjøp kr 555 000, salgspris kr 649 350. Merk: Ståleriet AS-tilbud viser kr 520 000 (pos1+pos2), Excel bruker kr 555 000 som innkjøpsbasis.",
+      "stal_paslag": "117%",
       "sandwich_paslag": "Fasadeplater (levering): 1.10 (10% påslag) — innkjøp kr 200/m², salgspris kr 220/m². Fasadeplatefestemateriell: 1.15 (15%). Fasademontasje: 1.15 (15%) — innkjøp kr 270/m², salgspris kr 310/m². Utvendig beslagsarbeid: 1.15 (15%). Takplater (levering): 1.20 (20%) — innkjøp kr 300/m², salgspris kr 360/m².",
-      "kommentar": "Ferro bruker differensierte påslag etter kategori: materialleveranser 10–20%, montasjearbeider 10–15%, UE-porter 15% (kr 44 000 → kr 50 600), kran/lift 10% på dagspriser. Frakt og transport: fast påslag kr 1 500–2 000 per post (10–15%). Rigg og drift tillegges 6% av sum salgspris. Totalprosjektet gir DB kr 223 593 på kostpris kr 1 468 470 — tilsvarer ~15% dekningsbidrag. Excel viser 'påslag 117%' for stål — dette er sannsynligvis notert som kostfaktor (kostnadspost × 1.17 = salgspris), ikke 117% margin."
+      "kommentar": "Ferro bruker differensierte påslag etter kategori: materialleveranser 10–20%, montasjearbeider 10–15%, UE-porter 15% (kr 44 000 → kr 50 600), kran/lift 10% på dagspriser. Frakt og transport: fast påslag kr 1 500–2 000 per post (10–15%). Rigg og drift tillegges 6% av sum salgspris. Totalprosjektet gir DB kr 223 593 på kostpris kr 1 468 470 — tilsvarer ~15% dekningsbidrag. Excel viser 'påslag 117%' for stål — dette er sannsynligvis notert som kostfaktor (kostnadspost × 1.17 = salgspris), ikke 117% margin.",
+      "per_blokk_markup": {
+        "stål": "117%",
+        "tak": "116%",
+        "yttervegg": "114%",
+        "kran_lift": "110%",
+        "porter": "115%"
+      }
     },
     "scope": "Ferro Stålentreprenør AS leverte komplett stålbygg nøkkelferdig bortsett fra betong/fundamenter, graving og søknad/tegning. Scope inkluderte: stålkonstruksjon (prosjektert, produsert, montert via UE Ståleriet AS), trapesprofilerte fasadeplater 18W.1070 på Z150-rigler (uisolert), selvbærende TRP takplater galvanisert, beslagsarbeid tak og vegg, 1 stk Crawford manuell leddheiseport 3500×3500mm, kran (Manitou 30 dager) og terrenggående lift (40 dager), frakt materialer.",
     "tekniske_losninger": "Stålkonstruksjon: saltak, pålitelighetsklasse 2, EXC2, ingen brann. Tak: selvbærende TRP høyprofil galvanisert (128R.930 / Tata Steel), montert direkte på takbjelker, C/C 6000mm, takfall 30°, tekkebeslag 70 lm. Vegger: trapesprofil 18W.1070 0,50mm polyester C3 montert vertikalt på galvaniserte Z150-rigler — uisolert kaldtlager. Fundamentering: direkte på fjell/sprengstein, bæreevne 350 kN/m² (ikke Ferros leveranse). Snølast: 4,0 kN/m² (formfaktor 0,8) — Tata Steel beregnet med 6,5 kN/m² (høyde 937 m.o.h.), Ruukki med S0 5,0 kN/m². Maling: RAL 7000 serie, ett strøk. Port: Crawford OH1042P manuell leddheiseport, stigende takskinner 30°.",
@@ -2227,20 +2236,31 @@
       "stal_leverandor": "Ståleriet AS (Sandefjord) — Pos1 produksjon+prosjektering kr 184 000, Pos2 montasje kr 55 000 — total kr 239 000 (men kalkulasjon viser innkjøp kr 274 000 inkl. alle poster)",
       "stal_innkjop_kr": 274000,
       "sandwich_leverandor": "Areco Profiles AS — SP 120 PIR-F, modul 1100mm, ca. 220 m² à kr 449 = kr 98 780 + frakt kr 8 950 + prosjektering kr 1 000 = totalt ca. kr 108 730",
-      "sandwich_innkjop_kr": 108730,
+      "sandwich_innkjop_kr": 273622,
       "sandwich_type": "120mm PIR-F sandwichelementer (SP 120 PIR-F), U-verdi 0,18 W/K·m², Brannklasse B-s1,d0, utv. Polyester rød + innv. RAL 9002 gråhvit",
       "tak_leverandor": "Areco Profiles AS — TP 131 Aluzink (korrosjonsklasse C3): 96 m² à kr 209 = kr 20 064 + emballasje kr 600 + frakt kr 4 500 + prosjektering kr 750 = totalt kr 25 914. UE taktekking (Uni Tak AS): kr 122 707 (mineralull, dampsperre, ettlags asfaltbelegg, beslag, rigg, frakt, stillas)",
-      "tak_innkjop_kr": 148621,
+      "tak_innkjop_kr": 63600,
       "andre_ue": [
         "ASSA ABLOY (Crawford): 2 stk Crawford OH1042P leddheiseport manuell 4000×6000mm — innkjøp kr 108 000 (pos 01), motoralternativ kr 130 000 (pos 02) — Ferro bruker manuell variant. Kalkulasjon viser UE porter innkjøp kr 108 000 (2 stk à kr 54 000)",
         "Uni Tak AS (tilbud nr 2412): UE taktekking — mineralull TP50 30mm + Toprock 190mm + dampsperre + ettlags asfaltbelegg + beslag + stillas + frakt — sum eks. mva kr 122 707",
         "Ståleriet AS: stålproduksjon EXC2, NS 8415, inkl. innstøpningsplater, transport og verkstedstegning 2D, brannklasse R15, males RAL 7000"
-      ]
+      ],
+      "kran_lift_innkjop_kr": 99750,
+      "porter_innkjop_kr": 108000,
+      "taktekking_innkjop_kr": 122880
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.36 (36% påslag) — innkjøp kr 274 000 → salgspris kr 372 640",
+      "stal_paslag": "136%",
       "sandwich_paslag": "Materiell: innkjøp kr 530/m² → salg kr 583/m² = 1.10 (10%). Montasje: innkjøp kr 173/m² → salg kr 199/m² = 1.15 (15%). Beslag/kuttarbeid: innkjøp kr 250/lm → salg kr 288/lm = 1.15 (15%). Areco innkjøp ca. kr 449/m² mens kalkulasjon bruker kr 530/m² — dvs. Ferro legger til ca. 18% på materiell fra Areco før kalkulasjonspris",
-      "kommentar": "Generelt påslag på UE-tjenester ca. 10%: Taktekking innkjøp kr 1 280/m² → salg kr 1 408/m² (10%). Porter innkjøp kr 54 000/stk → salg ca. kr 56 700/stk (5%). Kran/lift: Manitou innkjøp kr 2 200/dag → salg kr 2 420/dag (10%). Rigg og drift legges på som 5% av sum arbeider. Tilleggsarbeid faktureres kr 750/time montør, kr 1 200/time prosjektleder, + 10% materialpåslag."
+      "kommentar": "Generelt påslag på UE-tjenester ca. 10%: Taktekking innkjøp kr 1 280/m² → salg kr 1 408/m² (10%). Porter innkjøp kr 54 000/stk → salg ca. kr 56 700/stk (5%). Kran/lift: Manitou innkjøp kr 2 200/dag → salg kr 2 420/dag (10%). Rigg og drift legges på som 5% av sum arbeider. Tilleggsarbeid faktureres kr 750/time montør, kr 1 200/time prosjektleder, + 10% materialpåslag.",
+      "per_blokk_markup": {
+        "stål": "136%",
+        "tak": "116%",
+        "yttervegg": "113%",
+        "kran_lift": "111%",
+        "taktekking": "110%",
+        "porter": "105%"
+      }
     },
     "scope": "Ferro leverte komplett stålentreprense: stålkonstruksjon (prosjektert, produsert og montert), sandwich ytterveggelementer 120mm PIR, selvbærende TRP-takplater galvanisert, komplett taktekking (mineralull + asfaltbelegg), 2 stk manuelle leddporter 6×4m, 1 stk ståldør, takrenner/nedløp og alle beslag. Betong/grunnarbeider ikke inkludert.",
     "tekniske_losninger": "Stålkonstruksjon HEA/IPE-profiler (EXC2, brannklasse R15, RAL 7000), søyler med parapet, takbjelker, randdragere, gavl og vindkryss. Yttervegger: horisontale sandwichelementer SP 120 PIR-F, 1100mm modul, utvendig rød polyester. Tak: selvbærende Areco TP 131 Aluzink takplater (TP 50–100 profil) + 30mm mineralull topplate + 190mm Toprock + dampsperre + ettlags asfaltbelegg (Uni Tak). Fundament: betongmur/betong legoblokk 1600×800×800mm + 200mm betongplate på komprimert kult (ikke i Ferros scope). Snølast 4,0 kN/m², formfaktor 0,8, pålitelighetsklasse 2, EXC2.",
@@ -2491,16 +2511,33 @@
       "stal_leverandor": "Ståleriet AS — tilbud T202642 datert 07.03.2026: produksjon+transport+maling RAL 7000+prosjektering kr 375 000, montasje inkl. kran/Manitou kr 90 000, montasje SW-elementer kr 274 010 — total innkjøp stål kr 422 527 (kalkulasjon)",
       "stal_innkjop_kr": 422527,
       "sandwich_leverandor": "Ruukki Construction — tilbud 260210 datert 29.01.2026: SP2B 120 PIR skum 370 m² à kr 420/m², takplate T 130M-75L-930 galvanisert tak 300 m² à kr 178/m², mesanin 66 m² à kr 330/m². Kalkulasjon bruker innkjøp kr 460/m² yttervegg sandwich og kr 200/m² takplater",
-      "sandwich_innkjop_kr": 158700,
+      "sandwich_innkjop_kr": 466850,
       "sandwich_type": "120 mm PIR sandwichpanel (Ruukki SP2B 120 X), U-verdi 0,18, EI30, modulbredde 1100 mm — yttervegg 345 m². Innervegg 100 mm sandwichpanel 60 m²",
       "tak_leverandor": "PeCel AS — tilbud 10327 datert 23.01.2026: 1-lags asfaltbelegg tekking 300 m² à kr 280 = kr 105 000, oppbretter 69 lm à kr 175 = kr 15 094, taksluk 2+1 stk à kr 1 480 = kr 5 550, isolasjon 300 m² à kr 584 = kr 219 000 — netto innkjøp kr 275 716. Uni Tak AS — tilbud 2354 datert 23.01.2026: alternativtilbud total kr 283 676 eks mva (ikke valgt). Kalkulasjon bruker UE-pris taktekking kr 271 216",
-      "tak_innkjop_kr": 271216,
-      "andre_ue": "Betongbrystning (Systemblokk AS, tilbud P-26042): brystningselementer 150mm EPS sandwich t=300mm H=1200mm, 54 m² à kr 1 810 = kr 97 740, skallvegg 150mm Neopor 41 m² à kr 1 390 = kr 56 990, frakt 2 lass à kr 5 910 = kr 11 820 — total kr 181 850 eks mva, kalkulasjon UE-pris kr 260 130. Betongarbeid/gulv: kalkulasjon UE-pris kr 465 750 (inkl. 150mm S150 isolasjon + 150mm betong B35 M45 armert 2×K225, grop bremsetester, forsterkning løftebukker, oljeutskiller). Graving/grunnarbeid (BKI): kalkulasjon UE-pris kr 402 500. Fundament: kalkulasjon UE-pris kr 171 472. Porter (Oba Door AS, tilbud 2860 datert 28.01.2026): 3 stk leddheisport 3000×3300mm RAL 9005, Aluframe polykarbonat, SL-beslag, motordrift — kr 195 000 eks mva, kalkulasjon salgspris kr 227 700. Elektriker (Nome Elektro AS, revidert tilbud 26.01.2026): kr 232 000 eks mva, kalkulasjon innkjøp kr 248 418 / salgspris kr 280 800. Rørlegger (Reis VVS AS, revidert tilbud 30.01.2026): kr 225 000 eks mva, kalkulasjon salgspris kr 258 500. Arkitekt (ADAPT arkitekter AS): kr 80 000 eks mva (inkl. rammesøknad + arbeidstegninger). RIB kr 77 000, RIBr kr 33 000, Byfy/byggesaksgebyr kr 88 000. GHV innredning/himling: kalkulasjon salgspris kr 154 000 (GHV T-24 systemhimling 600×600mm, Glava Venus 17mm + DEKO 1090 systemvegg, sendes eget tilbud). Trapp (ståltrapp til mesanin): salgspris kr 97 750. Firesafe (brannisolasjon Conlitt hulldekke): salgspris kr 33 000. Ventilasjon: Bryn Byggklima AS tilbud kr 145 000 eks mva — ikke inkludert i tilbudssum (kr 0 i kalkyle)"
+      "tak_innkjop_kr": 130050,
+      "andre_ue": "Betongbrystning (Systemblokk AS, tilbud P-26042): brystningselementer 150mm EPS sandwich t=300mm H=1200mm, 54 m² à kr 1 810 = kr 97 740, skallvegg 150mm Neopor 41 m² à kr 1 390 = kr 56 990, frakt 2 lass à kr 5 910 = kr 11 820 — total kr 181 850 eks mva, kalkulasjon UE-pris kr 260 130. Betongarbeid/gulv: kalkulasjon UE-pris kr 465 750 (inkl. 150mm S150 isolasjon + 150mm betong B35 M45 armert 2×K225, grop bremsetester, forsterkning løftebukker, oljeutskiller). Graving/grunnarbeid (BKI): kalkulasjon UE-pris kr 402 500. Fundament: kalkulasjon UE-pris kr 171 472. Porter (Oba Door AS, tilbud 2860 datert 28.01.2026): 3 stk leddheisport 3000×3300mm RAL 9005, Aluframe polykarbonat, SL-beslag, motordrift — kr 195 000 eks mva, kalkulasjon salgspris kr 227 700. Elektriker (Nome Elektro AS, revidert tilbud 26.01.2026): kr 232 000 eks mva, kalkulasjon innkjøp kr 248 418 / salgspris kr 280 800. Rørlegger (Reis VVS AS, revidert tilbud 30.01.2026): kr 225 000 eks mva, kalkulasjon salgspris kr 258 500. Arkitekt (ADAPT arkitekter AS): kr 80 000 eks mva (inkl. rammesøknad + arbeidstegninger). RIB kr 77 000, RIBr kr 33 000, Byfy/byggesaksgebyr kr 88 000. GHV innredning/himling: kalkulasjon salgspris kr 154 000 (GHV T-24 systemhimling 600×600mm, Glava Venus 17mm + DEKO 1090 systemvegg, sendes eget tilbud). Trapp (ståltrapp til mesanin): salgspris kr 97 750. Firesafe (brannisolasjon Conlitt hulldekke): salgspris kr 33 000. Ventilasjon: Bryn Byggklima AS tilbud kr 145 000 eks mva — ikke inkludert i tilbudssum (kr 0 i kalkyle)",
+      "innervegg_innkjop_kr": 89700,
+      "kran_lift_innkjop_kr": 294000,
+      "porter_innkjop_kr": 198000,
+      "betong_innkjop_kr": 645000,
+      "taktekking_innkjop_kr": 256500
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.30 — innkjøp kr 422 527, salgspris kr 549 285 (påslag 30%)",
+      "stal_paslag": "130%",
       "sandwich_paslag": "1.15 — yttervegg sandwich innkjøp kr 460/m², salgspris kr 529/m² (påslag 15%). Montasje sandwich innkjøp kr 300/m², salgspris kr 345/m² (påslag 15%). Beslag yttervegg innkjøp kr 400/m², salgspris kr 460/m² (påslag 15%)",
-      "kommentar": "Ferro bruker konsekvent 15% påslag på materialer og UE-leveranser (sandwich, beslag, montasje). Stålkonstruksjon har 30% påslag. Takplater galvanisert: innkjøp kr 200/m², salg kr 240/m² = 20% påslag. Kran/lift: 10% påslag (Manitou kr 2 200 → kr 2 420/dag, lift kr 650 → kr 715/dag). Dør: innkjøp kr 28 029 (Umbra), salgspris kr 34 500 = ca. 23% påslag. Porter: innkjøp kr 195 000 (Oba Door), salgspris kr 227 700 = ca. 17% påslag. Elektriker: innkjøp kr 248 418 (Nome Elektro), salgspris kr 280 800 = ca. 13% påslag. Taktekking UE: innkjøp kr 271 216, salgspris kr 282 150 = ca. 4% (svakt påslag — trolig fordi isolasjonsarbeid er en stor post). Rigg og drift: 4% flat påslag på totale kostnader. Tilleggsarbeider faktureres kr 700/t montør, kr 1 200/t prosjektleder, 15% materialpåslag."
+      "kommentar": "Ferro bruker konsekvent 15% påslag på materialer og UE-leveranser (sandwich, beslag, montasje). Stålkonstruksjon har 30% påslag. Takplater galvanisert: innkjøp kr 200/m², salg kr 240/m² = 20% påslag. Kran/lift: 10% påslag (Manitou kr 2 200 → kr 2 420/dag, lift kr 650 → kr 715/dag). Dør: innkjøp kr 28 029 (Umbra), salgspris kr 34 500 = ca. 23% påslag. Porter: innkjøp kr 195 000 (Oba Door), salgspris kr 227 700 = ca. 17% påslag. Elektriker: innkjøp kr 248 418 (Nome Elektro), salgspris kr 280 800 = ca. 13% påslag. Taktekking UE: innkjøp kr 271 216, salgspris kr 282 150 = ca. 4% (svakt påslag — trolig fordi isolasjonsarbeid er en stor post). Rigg og drift: 4% flat påslag på totale kostnader. Tilleggsarbeider faktureres kr 700/t montør, kr 1 200/t prosjektleder, 15% materialpåslag.",
+      "per_blokk_markup": {
+        "stål": "130%",
+        "tak": "117%",
+        "yttervegg": "115%",
+        "innervegg": "115%",
+        "kran_lift": "112%",
+        "taktekking": "110%",
+        "betong": "113%",
+        "porter": "115%",
+        "maling": "112%",
+        "graving": "115%"
+      }
     },
     "scope": "Ferro Stålentreprenør AS leverte totalentreprise tilbygg for Ulefoss Auto AS: stålkonstruksjon (søyler/bjelker HUP, RAL 7000, P1), sandwichvegger (120mm PIR yttervegg + 100mm innervegg), selvbærende galvaniserte TRP takplater + takisolasjon (240mm EPS C80 + mineralull) + asfaltbelegg tekking, betongbrystning (Systemblokk prefab), gulvbetong B35 M45 med isolasjon, 3 stk motoriserte leddheisporter, aluminiumsinngangsdør, hulldekke 54 m² over venterom med brannisolasjon, ståltrapp til mesanin, elektro, rørlegger/sanitær, systemhimling (GHV), graving og fundamentering, prosjektering (RIB, RIBr, arkitekt, brannkonsept). Ventilasjon ikke inkludert i kontraktssum.",
     "tekniske_losninger": "Stålkonstruksjon HUP-søyler i vegg, EXC2, boltet til innstøpte boltegrupper. Yttervegg: Ruukki SP2B 120 PIR sandwichpanel, U=0,18, EI30, 1100mm modulbredde, 5 elementer i høyden. Tak: selvbærende TRP galvanisert (Ruukki T 130M-75L-930) + 30mm mineralull underlagsplate + 180mm EPS C80 (90+90) + 30mm mineralull topplate + kiler + 1-lags asfaltbelegg, U=0,13. Betongbrystning: Systemblokk sandwich 150mm EPS t=300mm H=1200mm U=0,202, 300mm under og 1100mm over ferdig gulv. Gulv: 150mm S150 EPS isolasjon + 150mm betong B35 M45 armert 2×K225 nett. Hulldekke 54 m² over venterom med 2cm Conlitt brannisolasjon (EI60). Punktfundamenter under søyler, direkte fundamentering bæreevne 140 kN/m². 3 stk leddheisporter 3000×3300mm RAL 9005 (Toors/Oba Door), SL-beslag, 45cm OH, motordrift. Snølast 4,0 kN/m² (Nome kommune).",
@@ -2981,24 +3018,38 @@
       "kran_lift": 416375,
       "dorer_vinduer": 460000,
       "betong": 489325,
-      "graving": null,
+      "graving": 429000,
       "rigg_drift_pct": 8,
       "sum_eks_mva": 3634259
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
-      "stal_innkjop_kr": 324790,
+      "stal_leverandor": "Ståleriet / Byggstål",
+      "stal_innkjop_kr": 279800,
       "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 550,
-      "sandwich_type": "PIR",
+      "sandwich_innkjop_kr": 367500,
+      "sandwich_type": "PIR 100mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 89325,
+      "andre_ue": null,
+      "kran_lift_innkjop_kr": 357250,
+      "porter_innkjop_kr": 420000,
+      "betong_innkjop_kr": 360750,
+      "taktekking_innkjop_kr": 222000
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.08%",
+      "stal_paslag": "110%",
       "sandwich_paslag": "1.15%",
-      "kommentar": "Kostpris kr 3 229 365, salgspris kr 3 634 259,45"
+      "kommentar": "Kostpris kr 3 229 365, salgspris kr 3 634 259,45",
+      "per_blokk_markup": {
+        "stål": "110%",
+        "tak": "117%",
+        "yttervegg": "115%",
+        "kran_lift": "117%",
+        "taktekking": "110%",
+        "porter": "115%",
+        "betong": "115%",
+        "graving": "110%"
+      }
     },
     "scope": "stål, yttervegg, tak, kran/lift, dører/vinduer, betong",
     "tekniske_losninger": null,
@@ -3028,19 +3079,35 @@
       "sum_eks_mva": 2873858
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet",
       "stal_innkjop_kr": 199000,
       "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 560,
-      "sandwich_type": "PIR",
+      "sandwich_innkjop_kr": 247540,
+      "sandwich_type": "PIR 120mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 58480,
+      "andre_ue": null,
+      "innervegg_innkjop_kr": 60720,
+      "kran_lift_innkjop_kr": 224950,
+      "porter_innkjop_kr": 220000,
+      "betong_innkjop_kr": 340000,
+      "taktekking_innkjop_kr": 112000
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.55%",
+      "stal_paslag": "155%",
       "sandwich_paslag": "1.15%",
-      "kommentar": "Kostpris kr 2 473 853,587, salgspris kr 2 873 858,125"
+      "kommentar": "Kostpris kr 2 473 853,587, salgspris kr 2 873 858,125",
+      "per_blokk_markup": {
+        "stål": "155%",
+        "tak": "116%",
+        "yttervegg": "115%",
+        "innervegg": "115%",
+        "kran_lift": "113%",
+        "taktekking": "115%",
+        "porter": "110%",
+        "betong": "110%",
+        "oljeutskiller": "115%"
+      }
     },
     "scope": "stål, yttervegg, tak, innervegg, kran/lift, dører/vinduer, betong",
     "tekniske_losninger": null,
@@ -3070,19 +3137,28 @@
       "sum_eks_mva": 2340041
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet",
       "stal_innkjop_kr": 634939,
-      "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 655,
-      "sandwich_type": "PIR",
+      "sandwich_leverandor": "Ruukki",
+      "sandwich_innkjop_kr": 474675,
+      "sandwich_type": "PIR 120mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 229704,
+      "andre_ue": null,
+      "kran_lift_innkjop_kr": 125750,
+      "taktekking_innkjop_kr": 464772
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.4%",
+      "stal_paslag": "140%",
       "sandwich_paslag": "1.1%",
-      "kommentar": "Kostpris kr 1 929 840, salgspris kr 2 340 040,6"
+      "kommentar": "Kostpris kr 1 929 840, salgspris kr 2 340 040,6",
+      "per_blokk_markup": {
+        "stål": "140%",
+        "tak": "116%",
+        "yttervegg": "113%",
+        "kran_lift": "110%",
+        "taktekking": "110%"
+      }
     },
     "scope": "stål, yttervegg, tak, kran/lift",
     "tekniske_losninger": null,
@@ -3112,19 +3188,28 @@
       "sum_eks_mva": 2199863
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet",
       "stal_innkjop_kr": 582849,
-      "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 655,
-      "sandwich_type": "TRP/Trapes",
+      "sandwich_leverandor": "Ruukki",
+      "sandwich_innkjop_kr": 517320,
+      "sandwich_type": "Steinull 200mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 208050,
+      "andre_ue": null,
+      "kran_lift_innkjop_kr": 113500,
+      "taktekking_innkjop_kr": 475000
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.25%",
+      "stal_paslag": "125%",
       "sandwich_paslag": "1.1%",
-      "kommentar": "Kostpris kr 1 896 719, salgspris kr 2 199 863"
+      "kommentar": "Kostpris kr 1 896 719, salgspris kr 2 199 863",
+      "per_blokk_markup": {
+        "stål": "125%",
+        "tak": "116%",
+        "yttervegg": "113%",
+        "kran_lift": "110%",
+        "taktekking": "110%"
+      }
     },
     "scope": "stål, yttervegg, tak, kran/lift",
     "tekniske_losninger": null,
@@ -3154,19 +3239,30 @@
       "sum_eks_mva": 4277850
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet / IPOA",
       "stal_innkjop_kr": 1195000,
-      "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 650,
-      "sandwich_type": "PIR",
+      "sandwich_leverandor": "Areco / Ruukki",
+      "sandwich_innkjop_kr": 770750,
+      "sandwich_type": "PIR 120mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 926900,
+      "andre_ue": null,
+      "innervegg_innkjop_kr": 197350,
+      "kran_lift_innkjop_kr": 146250,
+      "porter_innkjop_kr": 280000
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.03%",
+      "stal_paslag": "103%",
       "sandwich_paslag": "1.05%",
-      "kommentar": "Kostpris kr 3 989 250, salgspris kr 4 277 850"
+      "kommentar": "Kostpris kr 3 989 250, salgspris kr 4 277 850",
+      "per_blokk_markup": {
+        "stål": "103%",
+        "tak": "108%",
+        "yttervegg": "110%",
+        "innervegg": "110%",
+        "kran_lift": "110%",
+        "porter": "105%"
+      }
     },
     "scope": "stål, yttervegg, kran/lift, dører/vinduer",
     "tekniske_losninger": null,
@@ -3196,19 +3292,32 @@
       "sum_eks_mva": 5403673
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet / Byggstål / Storm",
       "stal_innkjop_kr": 1012782,
-      "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 410,
-      "sandwich_type": "PIR",
+      "sandwich_leverandor": "GHV",
+      "sandwich_innkjop_kr": 500500,
+      "sandwich_type": "PIR 120mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 514875,
+      "andre_ue": null,
+      "innervegg_innkjop_kr": 991470,
+      "kran_lift_innkjop_kr": 564000,
+      "porter_innkjop_kr": 640000,
+      "betong_innkjop_kr": 405000
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.2%",
+      "stal_paslag": "120%",
       "sandwich_paslag": "1.1%",
-      "kommentar": "Kostpris kr 4 964 027, salgspris kr 5 403 672,9"
+      "kommentar": "Kostpris kr 4 964 027, salgspris kr 5 403 672,9",
+      "per_blokk_markup": {
+        "stål": "120%",
+        "tak": "110%",
+        "yttervegg": "108%",
+        "innervegg": "110%",
+        "kran_lift": "100%",
+        "betong": "110%",
+        "porter": "100%"
+      }
     },
     "scope": "stål, yttervegg, tak, innervegg, kran/lift, dører/vinduer, betong",
     "tekniske_losninger": null,
@@ -3238,19 +3347,30 @@
       "sum_eks_mva": 3150853
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet",
       "stal_innkjop_kr": 555000,
       "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 770,
-      "sandwich_type": "TRP/Trapes",
+      "sandwich_innkjop_kr": 416500,
+      "sandwich_type": "Steinull 200mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 205240,
+      "andre_ue": null,
+      "kran_lift_innkjop_kr": 743000,
+      "porter_innkjop_kr": 272700,
+      "taktekking_innkjop_kr": 584775
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.1%",
+      "stal_paslag": "110%",
       "sandwich_paslag": "1.1%",
-      "kommentar": "Kostpris kr 2 827 215, salgspris kr 3 150 853"
+      "kommentar": "Kostpris kr 2 827 215, salgspris kr 3 150 853",
+      "per_blokk_markup": {
+        "stål": "110%",
+        "tak": "116%",
+        "yttervegg": "113%",
+        "kran_lift": "114%",
+        "taktekking": "110%",
+        "porter": "105%"
+      }
     },
     "scope": "stål, yttervegg, tak, kran/lift, dører/vinduer",
     "tekniske_losninger": null,
@@ -3280,19 +3400,30 @@
       "sum_eks_mva": 1514861
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet",
       "stal_innkjop_kr": 350000,
       "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 515,
-      "sandwich_type": "PIR",
+      "sandwich_innkjop_kr": 377620,
+      "sandwich_type": "PIR 120mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 106700,
+      "andre_ue": null,
+      "kran_lift_innkjop_kr": 123000,
+      "porter_innkjop_kr": 126000,
+      "taktekking_innkjop_kr": 244200
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.2%",
+      "stal_paslag": "120%",
       "sandwich_paslag": "1.1%",
-      "kommentar": "Kostpris kr 1 327 520, salgspris kr 1 514 860,5"
+      "kommentar": "Kostpris kr 1 327 520, salgspris kr 1 514 860,5",
+      "per_blokk_markup": {
+        "stål": "120%",
+        "tak": "115%",
+        "yttervegg": "113%",
+        "kran_lift": "112%",
+        "taktekking": "110%",
+        "porter": "110%"
+      }
     },
     "scope": "stål, yttervegg, tak, kran/lift, dører/vinduer",
     "tekniske_losninger": null,
@@ -3322,19 +3453,26 @@
       "sum_eks_mva": 1376534
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet",
       "stal_innkjop_kr": 410000,
       "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 530,
-      "sandwich_type": "PIR",
+      "sandwich_innkjop_kr": 481010,
+      "sandwich_type": "PIR 120mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 173650,
+      "andre_ue": null,
+      "kran_lift_innkjop_kr": 111500
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.25%",
+      "stal_paslag": "125%",
       "sandwich_paslag": "1.1%",
-      "kommentar": "Kostpris kr 1 176 160, salgspris kr 1 376 534"
+      "kommentar": "Kostpris kr 1 176 160, salgspris kr 1 376 534",
+      "per_blokk_markup": {
+        "stål": "125%",
+        "tak": "114%",
+        "yttervegg": "113%",
+        "kran_lift": "110%"
+      }
     },
     "scope": "stål, yttervegg, tak, kran/lift",
     "tekniske_losninger": null,
@@ -3364,19 +3502,32 @@
       "sum_eks_mva": 7384999
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet / Storm",
       "stal_innkjop_kr": 1500000,
-      "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 480,
-      "sandwich_type": "PIR",
+      "sandwich_leverandor": "Tata Steel",
+      "sandwich_innkjop_kr": 1583551,
+      "sandwich_type": "PIR 120mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 370520,
+      "andre_ue": null,
+      "kran_lift_innkjop_kr": 187000,
+      "porter_innkjop_kr": 207000,
+      "betong_innkjop_kr": 1230120,
+      "taktekking_innkjop_kr": 626400
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.12%",
+      "stal_paslag": "112%",
       "sandwich_paslag": "1.1%",
-      "kommentar": "Kostpris kr 6 655 285, salgspris kr 7 384 998,75"
+      "kommentar": "Kostpris kr 6 655 285, salgspris kr 7 384 998,75",
+      "per_blokk_markup": {
+        "stål": "112%",
+        "tak": "116%",
+        "yttervegg": "113%",
+        "kran_lift": "111%",
+        "taktekking": "110%",
+        "betong": "106%",
+        "porter": "105%"
+      }
     },
     "scope": "stål, yttervegg, tak, kran/lift, dører/vinduer, betong",
     "tekniske_losninger": null,
@@ -3406,19 +3557,30 @@
       "sum_eks_mva": 8580115
     },
     "innkjop_fra_leverandorer": {
-      "stal_leverandor": null,
+      "stal_leverandor": "Ståleriet",
       "stal_innkjop_kr": 2122000,
-      "sandwich_leverandor": null,
-      "sandwich_innkjop_kr": 665,
-      "sandwich_type": "PIR",
+      "sandwich_leverandor": "GHV",
+      "sandwich_innkjop_kr": 1841625,
+      "sandwich_type": "Steinull 200mm",
       "tak_leverandor": null,
-      "tak_innkjop_kr": null,
-      "andre_ue": null
+      "tak_innkjop_kr": 432885,
+      "andre_ue": null,
+      "kran_lift_innkjop_kr": 402500,
+      "betong_innkjop_kr": 430320,
+      "taktekking_innkjop_kr": 599820
     },
     "paaslag_beregnet": {
-      "stal_paslag": "1.11%",
+      "stal_paslag": "111%",
       "sandwich_paslag": "1.1%",
-      "kommentar": "Kostpris kr 7 628 831, salgspris kr 8 580 115,15"
+      "kommentar": "Kostpris kr 7 628 831, salgspris kr 8 580 115,15",
+      "per_blokk_markup": {
+        "stål": "111%",
+        "tak": "116%",
+        "yttervegg": "114%",
+        "kran_lift": "112%",
+        "taktekking": "110%",
+        "betong": "108%"
+      }
     },
     "scope": "stål, yttervegg, tak, kran/lift, betong",
     "tekniske_losninger": null,
