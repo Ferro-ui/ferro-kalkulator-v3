@@ -79,48 +79,104 @@ PORTER OG DØRER — tell fra plantegning og fasadetegning:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEG 3 — BRANNKRAV OG KONSEPT (kritisk for kostnad)
 
-BRANNKRAV — påvirker stålpris direkte (brannisolasjon = +15–30% på stål):
+BRANNKRAV OG MATERIALVALG — tenk som en bygningsingeniør, ikke som en regelbok.
 
-Les brannkrav fra:
-  • Tittelblokk på tegning: "Risikoklasse X, Brannklasse Y"
-  • Brannkonsept-dokument (PDF): R-krav på søyler, bjelker, etasjeskille
-  • Stykkliste: "RAL 7000 P1" = primert stål = trolig R15/ingen brannisolasjon
-  • "Brannisolert R30" = brannisolasjon (Isover FireProtect / Conlitt) påkrevd
-  • RIBr (rådgivende ingeniør brann) nevnt = brannkonsulent = R30+ prosjekt
+Les først alle dokumentene. Finn hva som faktisk er skrevet om brann:
+  • Tittelblokk: "Risikoklasse X, Brannklasse Y" — dette er det formelle grunnlaget
+  • Brannkonsept-PDF: viser hvilke bygningsdeler som trenger hva (R-krav per element)
+  • Stykkliste / materialliste: viser hva som faktisk er valgt (PIR, Steinull, Conlitt)
+  • Tegningsnotes: "søyler brannisolert R30", "stål males RAL 7000 P1" (= primert = ingen/R15)
+  • RIBr nevnt = brannrådgiver engasjert = R30+ prosjekt nesten alltid
 
-BRANNKONSEPT GIR OGSÅ MATERIALVALG — hent fra PDF hvis tilstede:
-  • Vegger: EI-verdi (f.eks. EI 60, EI 120) → hvilken sandwichpanel som trengs
-    EI 30: PIR 120mm kan brukes | EI 60: Steinull 150mm+ | EI 120: Steinull 200mm
-  • Tak: hvilken isolasjon og dampsperre er påkrevd
-  • Søyler: Conlitt / Isover FireProtect tykkelse for R30/R60
-  • Hulldekke: R60/R90 krav (gjelder messanin og etasjeskille)
-  Sett materialer.sandwich_type og materialer.tak_type ut fra brannkrav hvis ikke
-  eksplisitt oppgitt i stykkliste.
+NÅR DU HAR LEST DOKUMENTENE — vurder som en erfaren Ferro-kalkulator:
 
-Hvis brannkrav IKKE er oppgitt — utled fra bygningstype og størrelse:
-  Lager < 1000 m², 1 etg, RKL 1 → brannkrav: "ingen_spesifisert" (typisk R15 eller ubeskyttet)
-  Lager > 1000 m² eller 2 etg    → brannkrav: "R30" (nesten alltid)
-  Vaskehall med kjøretøy          → brannkrav: "R30" (risikoklasse 2)
-  Verksted med mange ansatte      → brannkrav: "R30–R60"
-  Kontorbygg / publikum           → brannkrav: "R60+" (risikoklasse 3+)
-  Messanin / hulldekke            → brannkrav: "R60–R90" på hulldekke
+  Hva betyr brannkravet KONKRET for stål-leveransen?
+  ─────────────────────────────────────────────────
+  Ingen / R15: Stål males eller primeres, ingen isolasjonsmatte. Kaldtlager, RKL 1
+               smått bygg. Billigste alternativ — ingen tillegg.
+
+  R30 på søyler/bjelker: Brannisolasjon (f.eks. Isover FireProtect / Conlitt spray)
+               på primærstål. Vanligst på lager >1000m², vaskehall, verksted.
+               Avhengig av antall søyler og profil — kan være 8–18% av stålpris.
+
+  R60+:        Tykkere isolasjon, gjerne hele rammen. Krever mer arbeid og material.
+               Typisk for bygg med mange ansatte, publikum, 2 etasjer.
+               Vanligvis 18–30% av stålpris hvis full frame.
+
+  R90/R120:   Hulldekke, etasjeskille, messanin — spesielle krav.
+               Conlitt på hulldekke-bæring, krevende montasje.
+
+  Viktig: R-kravet gjelder ULIKE elementer. Et prosjekt kan ha:
+  • Søyler R30, sekundærstål ingen (bare maling)
+  • Hulldekke R90, vegger/tak ingen spesialkrav
+
+  Kombiner ALLTID med historiske referanser (se nedenfor) for å kalibrere.
+
+Materialvalg fra brannkrav — fyll inn sandwich_type og tak_type basert på EI-krav:
+  • Ingen EI-krav eller EI 15-30: PIR 120mm kan brukes (god u-verdi, rimelig)
+  • EI 60 krav på vegg: Steinull 150mm minimum (PIR er ikke godkjent EI 60 i alle tilfeller)
+  • EI 120 krav på vegg: Steinull 200mm (f.eks. Ruukki nSPB 200 WEE, A2-klassifisering)
+  • A2-krav (ubrennbar fasade): alltid Steinull, aldri PIR
+
+  Hvis brannkonsept ikke er vedlagt, men bygg-typen tilsier krav:
+  → Bruk historiske prosjekter for lignende byggtype som referanse.
+  → Sett sandwich_type basert på hva Ferro typisk bruker for denne klassen.
+
+Estimer kostnadspaslag_pct for stål basert på din vurdering:
+  → 0:    Ingen brannisolasjon
+  → 5–10: Lett R15/R30, bare primærsøyler, lite antall søyler
+  → 10–20: R30 full frame, normalt antall søyler og bjelker
+  → 20–35: R60+, hulldekke, mesanin, krevende geometri
 
 KONSEPT — hva slags leveranse er dette:
-  Stålentreprise: Ferro gjør bare stål + kledning, andre gjør betong/graving/elektro
-  Totalentreprise: Ferro tar hele bygget inkl. betong, graving, porter, elektro
+  Stålentreprise: Ferro gjør stål + kledning, betong/graving/elektro er UE eller andre
+  Totalentreprise: Ferro tar hele nøkkelferdig bygg inkl. betong, graving, porter, elektro
   Undertilbud: Ferro leverer til en annen HE (ikke direkte til byggherre)
 
-Les konsept fra:
-  • Tilleggsinformasjon fra bruker ("Vi leverer stål, betong er UE" = stålentreprise)
-  • Anbudsdokument ("totalentreprise nøkkelferdig" = totalentreprise)
-  • Historiske prosjekter med lignende bygg
+  Les konsept fra tilleggsinformasjon og dokumenter.
+  Hvis totalentreprise: scope_items skal inkludere betong, graving, porter.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEG 3B — KALDTLAGER vs VARMTLAGER (kritisk for stålpris — opp til 2× forskjell)
+
+kaldtlager = true HVIS bygget er:
+  • Uisolert stålhall (ingen sandwich-panel, bare TRP-kledning eller åpent)
+  • Ikke oppvarmet (ingen varme, ingen isolasjon i tak/vegg — eller bare tynn isolasjon for frost)
+  • Typisk: strølager, sandlager, saltlager, plantørke, båthall uten varme, materiallager ute
+  • Stål-pris er 40–55% lavere enn varmtlager (lettere profiler, ingen brannisolasjon typisk)
+
+kaldtlager = false (standard) HVIS:
+  • Isolerte sandwich-vegger (PIR eller Steinull)
+  • Oppvarmet bygg
+  • Butikk, vaskehall, verksted, kontor, klubbhus — alltid false
+
+Tegn på kaldtlager i dokumenter:
+  • Ingen sandwich-panel nevnt
+  • TRP-plater som eneste kledning
+  • Stykkliste viser bare konstruksjonsstål, ingen isolasjon
+  • Bruksformål: kornlager, sand, salt, grus, båter, landbruk
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEG 3C — TAKHØYDE-KATEGORI (kritisk for kran- og liftkostnad)
+
+kran_lift-kostnad avhenger av TAKHØYDE (gesimshøyde), ikke av BRA.
+  Sett takhøyde_kategori:
+  "lav"  — gesimshøyde ≤ 5.0m (enkel mobilkran, lett arbeid)
+  "mid"  — gesimshøyde 5–9m   (standard lager/vaskehall — vanligst)
+  "høy"  — gesimshøyde > 9m   (stor hall, båtlager, industri — krevende oppsett)
+
+Les gesimshøyde fra fasadetegning (høyde fra ferdig gulv til takavrenning).
+Hvis ikke oppgitt eksplisitt: utled fra snitt-tegning eller bygg-type:
+  Vaskehall typisk 4–5m → lav
+  Lager 250–600m² typisk 5–7m → mid
+  Stor industri/båtlager > 1000m² typisk 8–12m → høy
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEG 4 — VURDER SCOPE (hva skal Ferro levere)
 
 Ferro er stålentreprenør. Standard Ferro-leveranse:
   ✓ stål — alltid med (ramme, søyler, åsar, sekundærstål)
-  ✓ yttervegg — sandwich-panel vegger (hvis stålbygg)
+  ✓ yttervegg — sandwich-panel vegger (hvis stålbygg, IKKE kaldtlager)
   ✓ tak — sandwich-plate eller TRP-tak (hvis stålbygg)
   ✓ kran_lift — alltid med ved montering av stålbygg
   ? innervegg — kun hvis romoppdeling i scope
@@ -153,12 +209,14 @@ Sett confidence basert på hva du faktisk fant:
 RETURNER BARE DETTE JSON-OBJEKTET:
 
 {
-  "bygg_type": "lager|vaskehall|verksted|butikk|klubbhus|garasje|annet",
+  "bygg_type": "lager|kaldtlager|vaskehall|verksted|butikk|klubbhus|garasje|annet",
+  "kaldtlager": false,
   "dimensjoner": "f.eks. 30×15×5.0m (L×B×H gesims), eller null",
   "bra_m2": 450,
   "tak_m2": 486,
   "yttervegg_m2": 450,
   "innervegg_m2": null,
+  "takhøyde_kategori": "lav|mid|høy",
   "materialer": {
     "sandwich_type": "PIR 120mm|Steinull 150mm|Steinull 200mm|null",
     "tak_type": "PIR SP2E 180mm|TRP galvanisert|Trapesblokk|null",
@@ -177,8 +235,9 @@ RETURNER BARE DETTE JSON-OBJEKTET:
     "brannklasse": "1|2|3|null",
     "stal_brannkrav": "ingen|R15|R30|R60|R120|ukjent",
     "brannisolasjon_paakrevd": true,
+    "kostnadspaslag_pct": 12,
     "kilde": "fra_tegning|utledet_fra_type|ikke_oppgitt",
-    "kommentar": "f.eks. 'Tittelblokk: RKL 2 BKL 1, søyler R30' eller 'Utledet: lager >1000m² → R30'"
+    "kommentar": "f.eks. 'R30 på primærsøyler, ca. 18 søyler HEA200 → ca. 12% tillegg'"
   },
   "konsept": {
     "type": "stalentreprise|totalentreprise|undertilbud|ukjent",
@@ -198,7 +257,10 @@ REGLER:
 - scope_items gyldige verdier: stål, yttervegg, innervegg, tak, dorer_vinduer, kran_lift, betong, graving
 - brannkrav.stal_brannkrav: ALLTID fyll inn — utled fra type/størrelse hvis ikke oppgitt
 - brannkrav.brannisolasjon_paakrevd: true hvis R30 eller høyere på søyler/bjelker
-- konsept.type: utled fra tilleggsinformasjon + typisk for bygningstypen`
+- brannkrav.kostnadspaslag_pct: estimer 0-35% tillegg på stålkostnad — 0 for ingen krav, 8-18% for R30 på søyler, 18-30% for R60 full ramme, 30-35% for R120. Bruk historiske referanser og omfang fra dokumenter.
+- konsept.type: utled fra tilleggsinformasjon + typisk for bygningstypen
+- kaldtlager: true BARE for uisolerte/uoppvarmede stålhaller. Ellers false. Avgjørende for stålpris (±50%).
+- takhøyde_kategori: "lav" (≤5m), "mid" (5–9m), "høy" (>9m) — avgjørende for kran/lift-kostnad. Les fra fasadetegning.`
 
 // ─── History context formatter ────────────────────────────────────────────────
 function formatHistoryContext(projects) {

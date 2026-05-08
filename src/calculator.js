@@ -7,40 +7,53 @@
 //   3. calibrateRate(block, similar, fallback) — weighted median from similar projects
 //   4. calculatePrices(facts, history) — main export
 
-// ── Brannkrav multiplier — applied on top of base stål rate ──────────────────
-// Brannisolasjon (Isover FireProtect / Conlitt) adds real cost to steel frame.
-// Based on actual Ferro projects: Firesafe costs range 138k–450k for 500–1500m².
-const BRANN_FACTOR = {
-  ingen:   1.00,  // Uisolert stål — kaldtlager, småbygg RKL1
-  R15:     1.05,  // Bare maling/primer P1 — minimal kostnad
-  R30:     1.18,  // Brannisolasjon søyler/bjelker — typisk lager >1000m²
-  R60:     1.28,  // Tykkere isolasjon — verksted, vaskehall, kontorbygg
-  R120:    1.40,  // Hulldekke, messanin, krav etasjeskille
-  ukjent:  1.12,  // Default: anta noe brannisolasjon for ukjente prosjekter
-}
+// Brannkrav cost adjustment comes from the AI's own analysis (facts.brannkrav.kostnadspaslag_pct).
+// No hardcoded lookup table — the AI reads the actual brannkonsept document and decides.
 
 // ── Fallback rates (updated to match real 2024–2026 Ferro project medians) ────
 // These are used only when no historical projects match (no history passed).
 const FALLBACK_RATES = {
-  // kr per m² BRA — from 19 real Ferro projects, median
-  stal_per_bra:        2050,
+  // kr per m² BRA — from 19 real Ferro projects, median (heated/insulated buildings)
+  stal_per_bra:           2050,
+  // kr per m² BRA — kaldtlager (unheated, uninsulated): bare steel frame only
+  // Real data: Kaldtlager Rauland 1203 kr/m², Rugtvedt 955 kr/m² → median ~1100
+  kaldtlager_stal_per_bra: 1100,
   // kr per m² fasade (yttervegg)
-  yttervegg_per_m2:    1470,
+  yttervegg_per_m2:       1470,
   // kr per m² tak
-  tak_per_m2:          1510,
+  tak_per_m2:             1510,
   // kr per m² BRA (innervegg extrapolated from projects with innervegg)
-  innervegg_per_m2:     680,
-  // kr per m² BRA
-  kran_lift_per_bra:    440,
+  innervegg_per_m2:        680,
+  // kran_lift: fixed budget by building height category — NOT per BRA (too variable)
+  // lav = gesimshøyde ≤5m, mid = 5–9m, høy = >9m
+  kran_lift_lav:         120000,
+  kran_lift_mid:         220000,
+  kran_lift_høy:         380000,
   // kr per m² gulv
-  betong_per_m2:        650,
+  betong_per_m2:           650,
   // kr per m² — graving varies enormously; set high default + wide uncertainty
-  graving_per_m2:       520,
+  graving_per_m2:          520,
   // door/gate rates per unit
-  foldeport_per_stk:  95000,
-  seksjonalport_per_stk: 62000,
-  ruteport_per_stk:   52000,
-  persondor_per_stk:  14000,
+  foldeport_per_stk:      95000,
+  seksjonalport_per_stk:  62000,
+  ruteport_per_stk:       52000,
+  persondor_per_stk:      14000,
+}
+
+// Size-correction factor for stål: small buildings have higher kr/m² due to fixed costs
+// Real data: 74m²=4168, 96m²=3882, 171m²=2051, 204m²=2059, 270m²=2034
+function stalSizeFactor(bra) {
+  if (bra < 100) return 1.90  // tiny building — fixed mobilkran/fundament costs dominate
+  if (bra < 150) return 1.40
+  if (bra < 220) return 1.10
+  return 1.00
+}
+
+// kran_lift budget based on takhøyde category (much more predictive than BRA)
+function kranBudget(takhøyde_kategori) {
+  if (takhøyde_kategori === 'høy') return FALLBACK_RATES.kran_lift_høy
+  if (takhøyde_kategori === 'mid') return FALLBACK_RATES.kran_lift_mid
+  return FALLBACK_RATES.kran_lift_lav
 }
 
 // ── Extract unit rates from a history entry ───────────────────────────────────
@@ -77,10 +90,11 @@ export function findSimilarProjects(facts, history) {
   const typeTarget = (facts.bygg_type || '').toLowerCase()
 
   const TYPE_FAMILY = {
-    lager: ['lager', 'lagerbygg', 'logistikk', 'hall'],
+    kaldtlager: ['kaldtlager', 'kald lager', 'uisolert', 'strølager', 'saltlager', 'sandlager', 'plantørke'],
+    lager: ['lager', 'lagerbygg', 'logistikk', 'hall', 'båtopplag', 'båthall'],
     vaskehall: ['vaskehall', 'vask', 'buss', 'garasje'],
-    verksted: ['verksted', 'service', 'mekanisk'],
-    butikk: ['butikk', 'handel', 'forretning'],
+    verksted: ['verksted', 'service', 'mekanisk', 'bilskade'],
+    butikk: ['butikk', 'handel', 'forretning', 'dagligvare', 'coop', 'extra'],
     klubbhus: ['klubbhus', 'garderobe', 'sports'],
   }
   const family = Object.entries(TYPE_FAMILY).find(([, words]) =>
@@ -168,34 +182,49 @@ export function calculatePrices(facts, history) {
 
   // ── STÅL ──────────────────────────────────────────────────────────────────
   if (scope.includes('stål')) {
-    const bra      = facts.bra_m2 || 300
-    const { rate, refs, source } = calibrateRate('stal_per_bra', similar, FALLBACK_RATES.stal_per_bra)
-    const conf     = facts.bra_m2 ? 'medium' : 'low'
-    const paslag   = 15
+    const bra        = facts.bra_m2 || 300
+    const isKald     = facts.kaldtlager === true
+    const fallbackRate = isKald ? FALLBACK_RATES.kaldtlager_stal_per_bra : FALLBACK_RATES.stal_per_bra
+    const rateKey    = isKald ? 'kaldtlager_stal_per_bra' : 'stal_per_bra'
+    // For kaldtlager use the kaldtlager-specific calibration; for normal buildings use stal_per_bra
+    const { rate: baseRate, refs, source } = isKald
+      ? calibrateRate('stal_per_bra', similar.filter(s => s.bygg_type?.toLowerCase().includes('kald') || s.stal_per_bra < 1400), fallbackRate)
+      : calibrateRate('stal_per_bra', similar, FALLBACK_RATES.stal_per_bra)
 
-    // Brannkrav: apply multiplier to base stål rate
-    const brann    = facts.brannkrav || {}
-    const brannKey = brann.stal_brannkrav || 'ukjent'
-    const brannF   = BRANN_FACTOR[brannKey] ?? BRANN_FACTOR.ukjent
-    const adjRate  = Math.round(rate * brannF)
-    const innkjop  = Math.round(bra * adjRate / (1 + paslag / 100))
-    const refsStr  = refs.length ? `Referanser: ${refs.slice(0,3).join(', ')}.` : refNote
+    // Size correction: small buildings cost significantly more per m² due to fixed mobilkran/fundament costs
+    const sizeFactor  = stalSizeFactor(bra)
+    const rate        = Math.round(baseRate * sizeFactor)
+    const conf        = facts.bra_m2 ? 'medium' : 'low'
+    const paslag      = 15
 
-    const brannNote = brannF !== 1.00
-      ? `Brannkrav ${brannKey} → stålrate justert ×${brannF} (${rate} → ${adjRate} kr/m²).`
-      : `Ingen brannisolasjon (${brannKey}).`
+    // Brannkrav adjustment: AI-provided percentage (0–50), not a lookup table.
+    const brann       = facts.brannkrav || {}
+    const brannPct    = brann.kostnadspaslag_pct ?? 0
+    const adjRate     = Math.round(rate * (1 + brannPct / 100))
+    const innkjop     = Math.round(bra * adjRate / (1 + paslag / 100))
+    const refsStr     = refs.length ? `Referanser: ${refs.slice(0,3).join(', ')}.` : refNote
+
+    const brannNote = brannPct > 0
+      ? `Brannkrav (${brann.stal_brannkrav || '?'}): +${brannPct}% tillegg → ${rate} → ${adjRate} kr/m². ${brann.kommentar || ''}`
+      : brann.kommentar || 'Ingen brannisolasjon påkrevd.'
+
+    const sizeNote = sizeFactor > 1.0
+      ? `Størrelseskorreksjon ×${sizeFactor} (lite bygg — faste kostnader fordelt på få m²).`
+      : ''
 
     blocks.push(makeBlock(
       'stål', 'Stålkonstruksjon (ramme, søyler, åsar)',
       bra * adjRate / (1 + paslag / 100),
       conf, paslag,
       `${bra} m² BRA × ${adjRate} kr/m² = innkjøp ca. ${innkjop.toLocaleString('nb-NO')} kr. ` +
-      `${brannNote} ${refsStr}`,
+      `${sizeNote} ${brannNote} ${refsStr}`.trim(),
       [
-        `${bra} m² BRA brukt som grunnlag`,
-        `Basisrate ${rate} kr/m² (${source === 'history' ? 'historisk kalibr.' : 'fallback'})`,
-        `Brannfaktor ×${brannF} for krav: ${brannKey}`,
-        brann.kommentar || 'Brannkrav: ' + (brann.kilde || 'ukjent kilde'),
+        `${bra} m² BRA`,
+        isKald ? 'Kaldtlager: uisolert ramme, lavere stålmengde' : 'Varmtlager/bygg: isolert konstruksjon',
+        `Basisrate ${baseRate} kr/m² (${source === 'history' ? 'historisk kalibr.' : 'fallback'})`,
+        sizeFactor > 1.0 ? `Størrelseskorreksjon ×${sizeFactor} → ${rate} kr/m²` : `Rate ${rate} kr/m²`,
+        brannPct > 0 ? `Branntillegg +${brannPct}% (AI-vurdert fra brannkonsept)` : 'Ingen brannisolasjon',
+        `Kilde: ${brann.kilde || 'ikke oppgitt'}`,
       ],
       facts.bra_m2 ? [] : ['bra_m2 ikke funnet — bruker 300 m² som estimat']
     ))
@@ -267,18 +296,26 @@ export function calculatePrices(facts, history) {
   }
 
   // ── KRAN OG LIFT ──────────────────────────────────────────────────────────
+  // kran_lift depends on building HEIGHT and SPAN, not BRA — per-m² calibration was ±60-170% off.
+  // Use takhøyde_kategori from AI: lav (≤5m gesims), mid (5–9m), høy (>9m).
   if (scope.includes('kran_lift')) {
-    const bra      = facts.bra_m2 || 300
-    const { rate, refs, source } = calibrateRate('kran_lift_per_bra', similar, FALLBACK_RATES.kran_lift_per_bra)
-    const paslag   = 12
-    const refsStr  = refs.length ? `Ref: ${refs.slice(0,3).join(', ')}.` : refNote
+    const kat     = facts.takhøyde_kategori || 'mid'
+    const budget  = kranBudget(kat)
+    const paslag  = 12
+    const katLabel = { lav: '≤5m gesims', mid: '5–9m gesims', høy: '>9m gesims' }[kat] || kat
     blocks.push(makeBlock(
       'kran_lift', 'Kran og lift',
-      bra * rate / (1 + paslag / 100),
+      Math.round(budget / (1 + paslag / 100)),
       'medium', paslag,
-      `${bra} m² BRA × ${rate} kr/m² (historisk snitt kran+lift per m²). ${refsStr}`,
-      [`${bra} m² BRA`, `Rate ${rate} kr/m² (${source})`, 'Inkluderer mobilkran + arbeidslift for hele byggemontasje'],
-      []
+      `Mobilkran + arbeidslift budsjett for ${katLabel}. Kategori: ${kat}.`,
+      [
+        `Takhøydekategori: ${kat} (${katLabel})`,
+        `Budsjett: ${budget.toLocaleString('nb-NO')} kr (mobilkran + lift hele montasje)`,
+        'Kran-kostnad avhenger av høyde og spennvidde — ikke BRA',
+      ],
+      kat === 'mid' && !facts.takhøyde_kategori
+        ? ['takhøyde_kategori ikke oppgitt — bruker "mid" (5–9m) som standard']
+        : []
     ))
   }
 

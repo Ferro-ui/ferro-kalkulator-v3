@@ -3585,5 +3585,118 @@
     "scope": "stål, yttervegg, tak, kran/lift, betong",
     "tekniske_losninger": null,
     "merknader": "Kategori: Ferdigstilt kalkulasjon 2026"
+  },
+  {
+    "navn": "Nybruveien 5 - Vaskehall Drammen",
+    "driveId": "local-nybruveien-5-drammen",
+    "sist_oppdatert": "2025-09-23T00:00:00.000Z",
+    "bygningstype": "vaskehall",
+    "bygg": {
+      "type": "Enkel vaskehall (bilvask), stålkonstruksjon med sandwich PIR 100mm vegger, TRP-tak + taktekking, spilekledning yttervegg. 1-etasje.",
+      "dimensjoner": "Takareal 140 m², yttervegg 152 m², innervegg 96 m². Estimert ca. 12×12m grunnflate.",
+      "bra_m2": 140,
+      "fasade_m2": 152,
+      "tak_m2": 140,
+      "lokasjon": "Drammen (Nybruveien 5, Krokstadelva)"
+    },
+    "priser_til_kunde": {
+      "stal": 350000,
+      "tak": 247035,
+      "yttervegg": 402003,
+      "innervegg": 132963,
+      "kran_lift": 103125,
+      "dorer_vinduer": 666250,
+      "betong": 425500,
+      "oljeutskiller_rorlegger": 676500,
+      "rigg_drift_pct": 5.3,
+      "sum_eks_mva": 3195000
+    },
+    "innkjop_fra_leverandorer": {
+      "stal_leverandor": "Ståleriet (T202599)",
+      "stal_innkjop_kr": 250000,
+      "sandwich_leverandor": "Krokstadelva (tilbud 25.460)",
+      "sandwich_innkjop_kr": 215440,
+      "sandwich_type": "PIR 100mm (SP2B)",
+      "tak_leverandor": "TRP galvanisert (egen)",
+      "tak_innkjop_kr": 80900,
+      "andre_ue": "Taktekking 140k, Porter 400k, Betong 370k, Oljeutskiller 230k, Rørlegger 385k",
+      "innervegg_innkjop_kr": 115620,
+      "kran_lift_innkjop_kr": 93750,
+      "porter_innkjop_kr": 400000,
+      "betong_innkjop_kr": 370000
+    },
+    "paaslag_beregnet": {
+      "stal_markup": 1.4,
+      "sandwich_markup": 1.15,
+      "per_blokk_markup": {
+        "stal": 1.4,
+        "yttervegg": 1.15,
+        "tak": 1.15,
+        "innervegg": 1.15,
+        "kran_lift": 1.1
+      }
+    },
+    "scope": "stål, yttervegg, tak, innervegg, kran/lift, dører/vinduer, porter, betong, oljeutskiller, rørlegger",
+    "tekniske_losninger": "PIR 100mm sandwich vegger, TRP-tak med taktekking, spilekledning yttervegg, 4 stk foldeporter, oljeutskiller. Ingen brannkrav (R0). Vaskehall totalentreprise uten elektro.",
+    "merknader": "Glitra Drift AS, Krokstadelva. Vaskehall 140m² BRA. Priset 23.09.2025."
+  },
+  {
+    "navn": "Bussgarasje Mjåvann - Kristiansand",
+    "driveId": "local-bussgarasje-mjavaann-kristiansand",
+    "sist_oppdatert": "2026-02-28T00:00:00.000Z",
+    "bygningstype": "garasje",
+    "bygg": {
+      "type": "Bussgarasje 2-etasjer: stålkonstruksjon med hulldekke 410m² (mesanin 2.etg garderobe/kontor), sandwich PIR 140mm vegger, TRP-tak + taktekking, betongbrystning. Totalentreprise inkl. graving, VVS, elektro, ventilasjon.",
+      "dimensjoner": "Takareal 1690 m², yttervegg 1144 m², innervegg 280 m², hulldekke 410 m². Estimert ca. 50×34m grunnflate, gesimshøyde ca. 6–7m.",
+      "bra_m2": 2100,
+      "fasade_m2": 1144,
+      "tak_m2": 1690,
+      "lokasjon": "Kristiansand (Mjåvannsåsen 5)"
+    },
+    "priser_til_kunde": {
+      "stal": 3057980,
+      "tak": 2484493,
+      "yttervegg": 1565467,
+      "innervegg": 317055,
+      "kran_lift": 247350,
+      "dorer_vinduer": 1161488,
+      "betong": 1837500,
+      "betongbrystning": 718364,
+      "graving": 5032800,
+      "elektro": 2205000,
+      "rorlegger": 3220000,
+      "ventilasjon": 3310850,
+      "firesafe_brannsikring": 115500,
+      "rigg_drift_pct": 6,
+      "sum_eks_mva": 32990000
+    },
+    "innkjop_fra_leverandorer": {
+      "stal_leverandor": "Ståleriet (T202623)",
+      "stal_innkjop_kr": 1588000,
+      "sandwich_leverandor": "GHV (Pristilbud 260218)",
+      "sandwich_innkjop_kr": 652480,
+      "sandwich_type": "PIR 140mm (SP2B)",
+      "tak_leverandor": "TRP galvanisert (egen)",
+      "tak_innkjop_kr": 777400,
+      "andre_ue": "Taktekking 1406k, Betong 1750k, Graving 4660k, Elektro 2100k, Rørlegger 2800k, Ventilasjon 2879k, Betongbrystning 653k",
+      "innervegg_innkjop_kr": 114800,
+      "kran_lift_innkjop_kr": 224500,
+      "porter_innkjop_kr": 440000,
+      "betong_innkjop_kr": 1750000
+    },
+    "paaslag_beregnet": {
+      "stal_markup": 1.51,
+      "sandwich_markup": 1.1,
+      "per_blokk_markup": {
+        "stal": 1.51,
+        "yttervegg": 1.1,
+        "tak": 1.2,
+        "innervegg": 1.15,
+        "kran_lift": 1.1
+      }
+    },
+    "scope": "stål, hulldekke, yttervegg, tak, innervegg, kran/lift, dører/vinduer, porter, betong, betongbrystning, graving, elektro, rørlegger, ventilasjon, brannisolasjon",
+    "tekniske_losninger": "PIR 140mm sandwich vegger (SP2B), TRP-tak med taktekking, hulldekke 410m² (2.etg), betongbrystning, R15 brannisolasjon på søyler 50lm. Stor totalentreprise inkl. alle tekniske fag. Porter 1stk (stor busspaker). Vinduer fasade (Umbra glazing). Firesafe.",
+    "merknader": "Risdal Touring AS, Mjåvannsåsen 5 Kristiansand. Bussgarasje 2100m² BRA totalt (1690 gr.fl + 410 hulldekke). Priset 2026. Totalentreprise inkl. graving 4.66M, el 2.1M, VVS 3.22M, ventilasjon 2.88M."
   }
 ]
