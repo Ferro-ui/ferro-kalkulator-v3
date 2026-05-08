@@ -20,8 +20,22 @@ const FALLBACK_RATES = {
   kaldtlager_stal_per_bra: 1100,
   // kr per m² fasade (yttervegg)
   yttervegg_per_m2:       1470,
-  // kr per m² tak
+  // kr per m² tak (legacy fallback — brukes når tak_konstruksjon_type ikke er gitt)
   tak_per_m2:             1510,
+  // Type-baserte rater per storleiks-bucket. Bygd fra Uni Tak tilbud-analyse:
+  //   trp_kun: kaldtlager, ingen tekking — bare TRP plater
+  //   trp_med_tekking: vaskehall/lett bygg — TRP + asfalt membran (ingen tjukk isolasjon)
+  //   varmt_tak_u018: standard isolert (120mm + EPS ~100mm + 2× topplate)
+  //   varmt_tak_u013: bedre isolert (180mm + EPS ~165mm + 2× topplate, ~+18%)
+  //   sandwich_pir_tak: PIR sandwichpaneler tak (alt-i-ett)
+  // Storleiks-bucket: liten<100m², mid 100-300m², stor>300m² — pga faste rigg/stillas/transport
+  tak_rates: {
+    trp_kun:           { liten:  600, mid:  500, stor:  450 },
+    trp_med_tekking:   { liten: 1200, mid: 1100, stor:  950 },
+    varmt_tak_u018:    { liten: 1250, mid: 1100, stor:  850 },
+    varmt_tak_u013:    { liten: 1450, mid: 1300, stor: 1000 },
+    sandwich_pir_tak:  { liten: 1500, mid: 1400, stor: 1200 },
+  },
   // kr per m² BRA (innervegg extrapolated from projects with innervegg)
   innervegg_per_m2:        680,
   // kran_lift: fixed budget by building height category — NOT per BRA (too variable)
@@ -47,6 +61,15 @@ function stalSizeFactor(bra) {
   if (bra < 150) return 1.40
   if (bra < 220) return 1.10
   return 1.00
+}
+
+// Tak-rate basert på konstruksjonstype + storleik (mer presist enn historie-kalibrering aleine)
+// Returnerer kr/m² inkl. materiell + montasje + rigg/stillas/transport (Uni Tak struktur)
+function takRateByType(tak_konstruksjon_type, m2) {
+  const bucket = m2 < 100 ? 'liten' : m2 <= 300 ? 'mid' : 'stor'
+  const rates  = FALLBACK_RATES.tak_rates[tak_konstruksjon_type]
+  if (!rates) return null  // ukjent type — fall back til kalibrert rate
+  return { rate: rates[bucket], bucket }
 }
 
 // kran_lift budget based on takhøyde category (much more predictive than BRA)
@@ -259,8 +282,22 @@ export function calculatePrices(facts, history) {
   if (scope.includes('tak')) {
     const m2       = facts.tak_m2 || estimateTak(facts)
     const hasM2    = !!facts.tak_m2
-    const { rate, refs, source } = calibrateRate('tak_per_m2', similar, FALLBACK_RATES.tak_per_m2)
-    const conf     = hasM2 ? 'high' : 'low'
+    const takKonstr = facts.tak_konstruksjon_type || null
+    const typeRate = takKonstr ? takRateByType(takKonstr, m2) : null
+    // Prioritet: 1) type-rate hvis AI klassifiserte tak, 2) historisk kalibr., 3) fallback
+    let rate, refs = [], source, basis
+    if (typeRate) {
+      rate   = typeRate.rate
+      source = 'type-bucket'
+      basis  = `Konstruksjonstype: ${takKonstr} (${typeRate.bucket} bucket)`
+    } else {
+      const cal = calibrateRate('tak_per_m2', similar, FALLBACK_RATES.tak_per_m2)
+      rate   = cal.rate
+      refs   = cal.refs
+      source = cal.source
+      basis  = `Type ukjent — historisk kalibr.`
+    }
+    const conf     = hasM2 && typeRate ? 'high' : hasM2 ? 'medium' : 'low'
     const paslag   = 15
     const takType  = facts.materialer?.tak_type || 'ukjent tak'
     const refsStr  = refs.length ? `Referanser: ${refs.slice(0,3).join(', ')}.` : refNote
@@ -268,12 +305,13 @@ export function calculatePrices(facts, history) {
       'tak', 'Takplater og tekking',
       m2 * rate / (1 + paslag / 100),
       conf, paslag,
-      `${m2} m² tak × ${rate} kr/m² salgspris (materiell + montasje). ` +
-      `Type: ${takType}. ${refsStr}`,
+      `${m2} m² tak × ${rate} kr/m² salgspris (materiell + montasje + rigg/stillas/transport). ` +
+      `${basis}. ${typeRate ? '' : refsStr}`,
       [
         `${m2} m² takareal (${hasM2 ? 'fra tegning' : 'estimert BRA × 1.10'})`,
-        `Rate ${rate} kr/m² (${source === 'history' ? 'historisk kalibr.' : 'fallback'})`,
-        `Tak-type: ${takType}`,
+        `Rate ${rate} kr/m² (${source})`,
+        `Tak-materialer: ${takType}`,
+        takKonstr ? `Konstruksjon: ${takKonstr}` : 'Konstruksjonstype ikke klassifisert',
       ],
       hasM2 ? [] : ['tak_m2 ikke fra tegning — estimert fra grunnflate']
     ))

@@ -172,6 +172,48 @@ Hvis ikke oppgitt eksplisitt: utled fra snitt-tegning eller bygg-type:
   Stor industri/båtlager > 1000m² typisk 8–12m → høy
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEG 3D — TAK KONSTRUKSJONSTYPE (avgjør tak-rate kr/m²)
+
+Tak-pris drives av: (1) U-verdi krav → isolasjonstjukkleik, (2) om det er tekking eller bare TRP.
+Klassifiser tak_konstruksjon_type:
+
+  "trp_kun"
+    → Bare TRP-plater (galvanisert/lakkert), ingen isolasjon, ingen tekking
+    → Kaldtlager, uisolert hall, sandlager
+    → Typisk 450–600 kr/m². U-verdi: ikke aktuelt.
+
+  "trp_med_tekking"
+    → TRP + lett asfaltmembran + minimal/ingen isolasjon
+    → Vaskehall (lite/ingen oppvarming), enkle bygg
+    → Typisk 950–1200 kr/m². U-verdi: ikke streng.
+
+  "varmt_tak_u018"  ← VANLIGSTE for normale isolerte bygg
+    → Dampsperre + 120mm underlagsplate + ~100mm EPS + 2× topplate + asfaltbelegg
+    → Lager, butikk, kontor, verksted med standard isolasjon
+    → U-verdi 0,17–0,20 (krav 0,18 typisk). Typisk 850–1250 kr/m².
+
+  "varmt_tak_u013"
+    → Dampsperre + 180mm underlagsplate + ~165mm EPS + 2× topplate + asfaltbelegg
+    → Strengere isolasjonskrav (TEK17 § 14-3 / passivhus / kjølelager)
+    → U-verdi 0,11–0,14. Typisk 1000–1450 kr/m² (~+18% over u018 pga tjukkere).
+
+  "sandwich_pir_tak"
+    → PIR sandwichpaneler tak (alt-i-ett, ingen separat tekking)
+    → SP2E 180mm e.l. — egen leverandør (Krokstadelva, Storm)
+    → Typisk 1200–1500 kr/m². U-verdi 0,12–0,15.
+
+REGLER:
+- Les Ferro sitt eget tilbud (Tilbud mal/Budsjettoverslag) FØRST — der står U-verdi tak ofte direkte.
+- Sjekk Uni Tak / Pecel / taktekkings-tilbud i undermappe "Taktekking/" om finst — der står detaljert struktur.
+- Funksjonsbeskrivelse / TEK17-krav i anbudsdokumenter spesifiserer U-verdi.
+- HVIS U-verdi ≤ 0,15 → "varmt_tak_u013"
+- HVIS U-verdi 0,16–0,22 → "varmt_tak_u018"
+- HVIS kaldtlager/uisolert → "trp_kun"
+- HVIS vaskehall uten varme → "trp_med_tekking"
+- HVIS sandwichpaneler oppgitt for tak (ikke bare vegg) → "sandwich_pir_tak"
+- Ikkje sikker → null (kalkulator faller tilbake til historisk kalibrering)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEG 4 — VURDER SCOPE (hva skal Ferro levere)
 
 Ferro er stålentreprenør. Standard Ferro-leveranse:
@@ -217,6 +259,8 @@ RETURNER BARE DETTE JSON-OBJEKTET:
   "yttervegg_m2": 450,
   "innervegg_m2": null,
   "takhøyde_kategori": "lav|mid|høy",
+  "tak_konstruksjon_type": "trp_kun|trp_med_tekking|varmt_tak_u018|varmt_tak_u013|sandwich_pir_tak|null",
+  "u_verdi_tak": 0.18,
   "materialer": {
     "sandwich_type": "PIR 120mm|Steinull 150mm|Steinull 200mm|null",
     "tak_type": "PIR SP2E 180mm|TRP galvanisert|Trapesblokk|null",
@@ -260,7 +304,9 @@ REGLER:
 - brannkrav.kostnadspaslag_pct: estimer 0-35% tillegg på stålkostnad — 0 for ingen krav, 8-18% for R30 på søyler, 18-30% for R60 full ramme, 30-35% for R120. Bruk historiske referanser og omfang fra dokumenter.
 - konsept.type: utled fra tilleggsinformasjon + typisk for bygningstypen
 - kaldtlager: true BARE for uisolerte/uoppvarmede stålhaller. Ellers false. Avgjørende for stålpris (±50%).
-- takhøyde_kategori: "lav" (≤5m), "mid" (5–9m), "høy" (>9m) — avgjørende for kran/lift-kostnad. Les fra fasadetegning.`
+- takhøyde_kategori: "lav" (≤5m), "mid" (5–9m), "høy" (>9m) — avgjørende for kran/lift-kostnad. Les fra fasadetegning.
+- tak_konstruksjon_type: en av {trp_kun, trp_med_tekking, varmt_tak_u018, varmt_tak_u013, sandwich_pir_tak} eller null. Avgjørende for tak-rate (450–1500 kr/m²). Les U-verdi tak fra Ferro-tilbud eller funksjonsbeskrivelse, og taktekkings-tilbud (Uni Tak/Pecel) for materialstruktur.
+- u_verdi_tak: tall mellom 0.10 og 0.30, eller null. Hentet direkte fra Ferro-tilbud, anbudsdokument eller TEK17-krav.`
 
 // ─── History context formatter ────────────────────────────────────────────────
 function formatHistoryContext(projects) {
