@@ -59,6 +59,7 @@ export function useProject() {
 
   const handleAnalyze = async () => {
     if (files.length === 0 && !extraInfo.trim()) { setError(t('errAddFiles')); return }
+    if (!apiKey) { setShowKey(true); setError(t('errNoApiKey')); return }
     setAnalyzing(true); setError(''); setResult(null); setBlocks([])
     try {
       const history = loadManualProjects()

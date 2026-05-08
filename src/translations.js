@@ -38,6 +38,7 @@ export const translations = {
 
     // Errors
     errAddFiles: 'Legg til filer eller skriv inn prosjektinfo',
+    errNoApiKey: 'Legg inn API-nøkkel (🔑 oppe til høyre) for å bruke AI-analyse',
     errDocx: 'docx feil: ',
 
     // Results
@@ -150,6 +151,7 @@ export const translations = {
 
     // Errors
     errAddFiles: 'Додайте файли або опишіть проєкт',
+    errNoApiKey: 'Введіть API-ключ (🔑 вгорі праворуч) щоб використовувати AI-аналіз',
     errDocx: 'Помилка docx: ',
 
     // Results
