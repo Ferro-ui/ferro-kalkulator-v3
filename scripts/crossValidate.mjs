@@ -48,12 +48,15 @@ function factsFromEntry(entry) {
   }
 
   return {
-    bra_m2:             b.bra_m2     || null,
-    yttervegg_m2:       b.fasade_m2  || null,
-    tak_m2:             b.tak_m2     || null,
-    bygg_type:          entry.bygningstype || b.type || '',
+    bra_m2:                b.bra_m2     || null,
+    yttervegg_m2:          b.fasade_m2  || null,
+    tak_m2:                b.tak_m2     || null,
+    bygg_type:             entry.bygningstype || b.type || '',
     kaldtlager,
     takhøyde_kategori,
+    tak_konstruksjon_type: entry.tak_konstruksjon_type || null,
+    taktekking_inkludert:  entry.taktekking_inkludert  ?? null,
+    betong_inkludert:      entry.betong_inkludert       ?? null,
     scope_items,
     brannkrav:          { kostnadspaslag_pct: 0, kilde: 'ikke_oppgitt' },
     confidence:         'medium',

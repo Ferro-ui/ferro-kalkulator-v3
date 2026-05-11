@@ -357,14 +357,22 @@ function formatHistoryContext(projects) {
     const matInfo = [
       inn.sandwich_type ? `panel: ${inn.sandwich_type}` : null,
       inn.stal_leverandor ? `stål: ${inn.stal_leverandor.split('—')[0].trim()}` : null,
+      p.tak_konstruksjon_type ? `tak-type: ${p.tak_konstruksjon_type}` : null,
+      p.u_verdi_tak != null ? `U-verdi tak: ${p.u_verdi_tak}` : null,
       brannInfo.length ? `brann: ${brannInfo.join('/')}` : null,
       konseptInfo ? `konsept: ${konseptInfo}` : null,
     ].filter(Boolean).join(', ')
 
+    const scopeFlags = [
+      p.taktekking_inkludert === true  ? 'taktekking inkl.' : p.taktekking_inkludert === false ? 'taktekking IKKE inkl.' : null,
+      p.betong_inkludert     === true  ? 'betong inkl.'     : p.betong_inkludert     === false ? 'betong IKKE inkl.'     : null,
+    ].filter(Boolean).join(', ')
+
     lines.push(
-      `• ${p.navn}` +
+      `• ${p.navn}` + (p.bygningstype ? ` [${p.bygningstype}]` : '') +
       (bygInfo      ? `\n  Bygg: ${bygInfo}` : '') +
       (p.scope      ? `\n  Scope: ${p.scope}` : '') +
+      (scopeFlags   ? `\n  Scope-flagg: ${scopeFlags}` : '') +
       (priceFields  ? `\n  Priser: ${priceFields}` : '') +
       (rates.length ? `\n  Enhetsrater: ${rates.join(', ')}` : '') +
       (matInfo      ? `\n  Materialer: ${matInfo}` : '') +
