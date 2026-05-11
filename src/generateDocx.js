@@ -587,9 +587,11 @@ export async function generateAndDownloadDocx(data) {
   const slug = (data.projectName || 'prosjekt').replace(/\s+/g, '_').replace(/[^\w_]/g, '')
   const date = new Date().toISOString().slice(0, 10)
   a.download = `Budsjett_${slug}_${date}.docx`
-  a.style.display = 'none'
+  a.style.cssText = 'display:none;position:fixed;'
   document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+  setTimeout(() => {
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, 30000)
 }
