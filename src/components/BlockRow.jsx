@@ -55,7 +55,7 @@ export default function BlockRow({ block, onChange, index }) {
             color: 'var(--navy)', letterSpacing: '0.01em', lineHeight: 1.2,
           }}>{block.name}</div>
           {block.basis && (
-            <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{block.basis}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2, lineHeight: 1.4 }}>{block.basis}</div>
           )}
         </div>
 
