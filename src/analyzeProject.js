@@ -439,6 +439,28 @@ async function analyzeViaBackend(wrappedFiles, extraInfo, onStatus) {
   return result
 }
 
+// ─── Robust JSON extraction — counts braces, skips strings ───────────────────
+function extractJsonObject(text) {
+  let depth = 0, inStr = false, escape = false, start = -1
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (escape)           { escape = false; continue }
+    if (ch === '\\' && inStr) { escape = true; continue }
+    if (ch === '"')       { inStr = !inStr; continue }
+    if (inStr)            continue
+    if (ch === '{') {
+      if (depth === 0) start = i
+      depth++
+    } else if (ch === '}') {
+      depth--
+      if (depth === 0 && start !== -1) {
+        try { return JSON.parse(text.slice(start, i + 1)) } catch { start = -1 }
+      }
+    }
+  }
+  return null
+}
+
 // ─── Browser-direct path ──────────────────────────────────────────────────────
 async function analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus, historyData) {
   const client     = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
@@ -462,15 +484,13 @@ async function analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus, hist
   onStatus('Sender til Claude AI...')
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 2048,
+    max_tokens: 4096,
     messages: [{ role: 'user', content }],
   })
 
   const text  = response.content[0].text.trim()
-  const start = text.indexOf('{')
-  const end   = text.lastIndexOf('}')
-  if (start === -1) throw new Error('Claude klarte ikke å tolke dokumentene. Prøv å legge til tilleggsinformasjon.')
-  const facts = JSON.parse(text.slice(start, end + 1))
+  const facts = extractJsonObject(text)
+  if (!facts) throw new Error('Claude klarte ikke å tolke dokumentene. Prøv å legge til tilleggsinformasjon.')
 
   onStatus('Kalkulerer priser...')
   const { blocks, totalLow, totalHigh } = calculatePrices(facts, historyData)
@@ -564,11 +584,10 @@ export async function extractProjectHistory(wrappedFiles, apiKey, onStatus) {
     messages: [{ role: 'user', content }],
   })
 
-  const text  = response.content[0].text.trim()
-  const start = text.indexOf('{')
-  const end   = text.lastIndexOf('}')
-  if (start === -1) throw new Error('AI klarte ikke å tolke dokumentene. Fyll inn feltene manuelt.')
-  return JSON.parse(text.slice(start, end + 1))
+  const text   = response.content[0].text.trim()
+  const result = extractJsonObject(text)
+  if (!result) throw new Error('AI klarte ikke å tolke dokumentene. Fyll inn feltene manuelt.')
+  return result
 }
 
 // ─── File helpers ─────────────────────────────────────────────────────────────
