@@ -334,6 +334,18 @@ function blockDescription(block, forutsetninger) {
     ]
   }
 
+  if (id === 'hulldekker') {
+    return [
+      body('Det er medregnet levering og montasje av hulldekker (betongelementer) for etasjeskille. Pris inkluderer prefabrikerte betongelementer og kranmontasje.'),
+    ]
+  }
+
+  if (id === 'heis') {
+    return [
+      body('Det er medregnet levering og montasje av personheis. Budsjettprisen dekker standard 2-etasjes personheis inkl. sjakt og styresystem. Endelig pris avhenger av heistype og kapasitet — ta inn tilbud fra heis-leverandør.'),
+    ]
+  }
+
   // Generic fallback — use assumptions text if available
   const assumptionText = block.assumptions?.filter(a => a && a.length > 10).join('. ')
   if (assumptionText) {

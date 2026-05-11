@@ -63,6 +63,10 @@ const FALLBACK_RATES = {
   seksjonalport_per_stk:  62000,
   ruteport_per_stk:       52000,
   persondor_per_stk:      14000,
+  // hulldekker (hollow-core concrete slab) — supply + montasje betongelementer
+  hulldekker_per_m2:       900,
+  // heis — fixed budget for 2-storey standard passenger lift incl. shaft
+  heis_budsjett:          550000,
 }
 
 // Size-correction factor for stål: small buildings have higher kr/m² due to fixed costs
@@ -442,6 +446,35 @@ export function calculatePrices(facts, history) {
       `${bra} m² × ${rate} kr/m² budsjettestim. ${refsStr} VIKTIG: graving avhenger svært av grunnforhold.`,
       [`${bra} m² grunnflate`, `Rate ${rate} kr/m² (${source})`, 'Normalt grunnforhold antatt'],
       ['Graving varierer enormt med grunnforhold — innhent UE-tilbud for presist estimat']
+    ))
+  }
+
+  // ── HULLDEKKER ────────────────────────────────────────────────────────────
+  if (scope.includes('hulldekker') && facts.hulldekker_m2) {
+    const m2 = facts.hulldekker_m2
+    const rate = FALLBACK_RATES.hulldekker_per_m2
+    const paslag = 10
+    blocks.push(makeBlock(
+      'hulldekker', 'Hulldekker (etasjeskille)',
+      Math.round(m2 * rate / (1 + paslag / 100)),
+      'medium', paslag,
+      `${m2} m² hulldekker × ${rate} kr/m² (levering + montasje betongelementer).`,
+      [`${m2} m² etasjeskille`, `Rate ${rate} kr/m² (hulldekke betongelementer, montasje inkl.)`],
+      []
+    ))
+  }
+
+  // ── HEIS ──────────────────────────────────────────────────────────────────
+  if (scope.includes('heis')) {
+    const budget = FALLBACK_RATES.heis_budsjett
+    const paslag = 10
+    blocks.push(makeBlock(
+      'heis', 'Personheis',
+      Math.round(budget / (1 + paslag / 100)),
+      'medium', paslag,
+      `Personheis budsjett (levering + montasje, 2-etg). Pris avhenger av løfthøyde og kapasitet.`,
+      ['2-etasjers heis, standard personheis', 'Budsjett inkl. sjakt og montasje'],
+      ['Heistype og kapasitet ikke spesifisert — ta inn tilbud fra heis-UE']
     ))
   }
 

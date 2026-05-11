@@ -268,6 +268,7 @@ RETURNER BARE DETTE JSON-OBJEKTET:
   "tak_m2": 486,
   "yttervegg_m2": 450,
   "innervegg_m2": null,
+  "hulldekker_m2": null,
   "takhøyde_kategori": "lav|mid|høy",
   "tak_konstruksjon_type": "trp_kun|trp_med_tekking|varmt_tak_u018|varmt_tak_u013|sandwich_pir_tak|null",
   "u_verdi_tak": 0.18,
@@ -283,7 +284,7 @@ RETURNER BARE DETTE JSON-OBJEKTET:
     "persondorer_stk": null,
     "vinduer_stk": null
   },
-  "scope_items": ["stål","yttervegg","tak","kran_lift"],
+  "scope_items": ["stål","yttervegg","tak","kran_lift","hulldekker","heis"],
   "brannkrav": {
     "risikoklasse": "1|2|3|null",
     "brannklasse": "1|2|3|null",
@@ -299,16 +300,18 @@ RETURNER BARE DETTE JSON-OBJEKTET:
   },
   "lokasjon": "by/sted eller null",
   "confidence": "high|medium|low",
-  "beregning_notater": "kort forklaring: hvordan dimensjoner ble beregnet, f.eks. '6 spenn × 5000mm = 30m'",
+  "beregning_notater": "maks 150 tegn: f.eks. '6×5000=30m, BRA=450m², vegg=450m², tak=486m²'",
   "missing": ["felt som genuint IKKE kunne leses eller beregnes"]
 }
 
 REGLER:
 - BEREGN yttervegg_m2 og tak_m2 fra mål — null KUN hvis dimensjoner er totalt fraværende
-- Vis regnestykket i "beregning_notater"
+- beregning_notater: MAKS 150 TEGN — bare nøkkeltall, ingen lange forklaringer
 - scope_items: kun det Ferro faktisk skal levere (fra tilleggsinformasjon eller klart fra dokumenter)
 - Aldri returner prisfelt — bare fakta og mål
-- scope_items gyldige verdier: stål, yttervegg, innervegg, tak, dorer_vinduer, kran_lift, betong, graving
+- scope_items gyldige verdier: stål, yttervegg, innervegg, tak, dorer_vinduer, kran_lift, betong, graving, hulldekker, heis
+- hulldekker: ta med i scope_items KUN hvis 2-etg bygg med etasjeskiller (hulldekke/betongelementer)
+- heis: ta med i scope_items KUN hvis bygg har 2+ etasjer og heis er nevnt
 - brannkrav.stal_brannkrav: ALLTID fyll inn — utled fra type/størrelse hvis ikke oppgitt
 - brannkrav.brannisolasjon_paakrevd: true hvis R30 eller høyere på søyler/bjelker
 - brannkrav.kostnadspaslag_pct: estimer 0-35% tillegg på stålkostnad — 0 for ingen krav, 8-18% for R30 på søyler, 18-30% for R60 full ramme, 30-35% for R120. Bruk historiske referanser og omfang fra dokumenter.
@@ -484,7 +487,7 @@ async function analyzeViaBrowser(wrappedFiles, extraInfo, apiKey, onStatus, hist
   onStatus('Sender til Claude AI...')
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: 8192,
     messages: [{ role: 'user', content }],
   })
 
