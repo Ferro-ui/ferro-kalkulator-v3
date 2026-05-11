@@ -112,15 +112,25 @@ NÅR DU HAR LEST DOKUMENTENE — vurder som en erfaren Ferro-kalkulator:
 
   Kombiner ALLTID med historiske referanser (se nedenfor) for å kalibrere.
 
-Materialvalg fra brannkrav — fyll inn sandwich_type og tak_type basert på EI-krav:
-  • Ingen EI-krav eller EI 15-30: PIR 120mm kan brukes (god u-verdi, rimelig)
-  • EI 60 krav på vegg: Steinull 150mm minimum (PIR er ikke godkjent EI 60 i alle tilfeller)
-  • EI 120 krav på vegg: Steinull 200mm (f.eks. Ruukki nSPB 200 WEE, A2-klassifisering)
-  • A2-krav (ubrennbar fasade): alltid Steinull, aldri PIR
+Materialvalg — sett sandwich_type ALLTID for varmtlager (aldri null for isolerte bygg):
 
-  Hvis brannkonsept ikke er vedlagt, men bygg-typen tilsier krav:
-  → Bruk historiske prosjekter for lignende byggtype som referanse.
-  → Sett sandwich_type basert på hva Ferro typisk bruker for denne klassen.
+  PRIORITET 1 — tilleggsinformasjon / dokumenter nevner type eksplisitt:
+  → "PIR" eller "polyisocyanurat" → "PIR 120mm" (eller spesifisert mm)
+  → "steinull" eller "mineralull" → "Steinull 150mm" (eller spesifisert mm)
+  → Leverandørnavn: "Storm SP120" / "Krokstadelva" → "PIR 120mm"
+  → "Ruukki nSPB 200 WEE" / "A2" / "ubrennbar" → "Steinull 200mm"
+
+  PRIORITET 2 — EI brannkrav fra dokumenter:
+  • Ingen EI-krav eller EI 15-30: PIR 120mm
+  • EI 60 krav på vegg: Steinull 150mm (PIR er ikke alltid godkjent EI 60)
+  • EI 120 krav på vegg: Steinull 200mm
+
+  PRIORITET 3 — bygningstype som standard (BRUK ALLTID HVIS VARMTLAGER):
+  • Lager, verksted, kontor, butikk, klubbhus uten brannkrav → "PIR 120mm"
+  • Vaskehall (tynn isolasjon, ikke TEK-strengt) → "PIR 80mm"
+  • Kaldtlager / uisolert → sett til null (ingen sandwich)
+
+  REGEL: Returner ALDRI null for kaldtlager=false. Bruk alltid minst "PIR 120mm" som standard.
 
 Estimer kostnadspaslag_pct for stål basert på din vurdering:
   → 0:    Ingen brannisolasjon

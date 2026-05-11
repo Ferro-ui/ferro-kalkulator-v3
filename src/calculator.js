@@ -271,7 +271,7 @@ export function calculatePrices(facts, history) {
     const { rate, refs, source } = calibrateRate('yttervegg_per_m2', similar, FALLBACK_RATES.yttervegg_per_m2)
     const conf     = hasM2 ? 'high' : 'low'
     const paslag   = 15
-    const sandwichType = facts.materialer?.sandwich_type || 'ukjent sandwich'
+    const sandwichType = facts.materialer?.sandwich_type || (facts.kaldtlager ? 'TRP kledning (uisolert)' : 'PIR 120mm (antatt standard)')
     const refsStr  = refs.length ? `Referanser: ${refs.slice(0,3).join(', ')}.` : refNote
     blocks.push(makeBlock(
       'yttervegg', 'Ytterveggselementer (sandwich)',
@@ -310,7 +310,7 @@ export function calculatePrices(facts, history) {
     }
     const conf     = hasM2 && typeRate ? 'high' : hasM2 ? 'medium' : 'low'
     const paslag   = 15
-    const takType  = facts.materialer?.tak_type || 'ukjent tak'
+    const takType  = facts.materialer?.tak_type || (facts.kaldtlager ? 'TRP galvanisert (uisolert)' : 'TRP + isolasjon (antatt standard)')
     const refsStr  = refs.length ? `Referanser: ${refs.slice(0,3).join(', ')}.` : refNote
     blocks.push(makeBlock(
       'tak', 'Takplater og tekking',
