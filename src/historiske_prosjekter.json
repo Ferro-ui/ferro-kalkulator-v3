@@ -3030,9 +3030,9 @@
       "merknader": "Prosjektet er et bilanlegg (Ulefoss Auto) med hulldekke, taktekking som UE-post (kr 1 045/m²), og opsjoner for bl.a. strømskinne (kr 407 000), TKS-heis (kr 300 000) og overflatebehandlingsanlegg (kr 187 000) som ikke er inkludert i totalen. Rigg og drift på 4 % er beregnet som et beløp (kr 191 946) og inngår i totalsummen."
     },
     "bygningstype": "verksted",
-    "tak_konstruksjon_type": "trp_kun",
-    "u_verdi_tak": null,
-    "taktekking_inkludert": false,
+    "tak_konstruksjon_type": "varmt_tak_u018",
+    "u_verdi_tak": 0.18,
+    "taktekking_inkludert": true,
     "betong_inkludert": true
   },
   {
@@ -3091,9 +3091,9 @@
     "tekniske_losninger": null,
     "merknader": "Kategori: 2.1.3 Bekreftet oppdrag",
     "bygningstype": "vaskehall",
-    "tak_konstruksjon_type": "trp_kun",
+    "tak_konstruksjon_type": "trp_med_tekking",
     "u_verdi_tak": null,
-    "taktekking_inkludert": false,
+    "taktekking_inkludert": true,
     "betong_inkludert": true
   },
   {
@@ -3154,9 +3154,9 @@
     "tekniske_losninger": null,
     "merknader": "Kategori: 2.1.3 Bekreftet oppdrag",
     "bygningstype": "vaskehall",
-    "tak_konstruksjon_type": "trp_kun",
+    "tak_konstruksjon_type": "trp_med_tekking",
     "u_verdi_tak": null,
-    "taktekking_inkludert": false,
+    "taktekking_inkludert": true,
     "betong_inkludert": true
   },
   {
@@ -3210,9 +3210,9 @@
     "tekniske_losninger": null,
     "merknader": "Kategori: 2.1.3 Bekreftet oppdrag",
     "bygningstype": "butikk/dagligvare",
-    "tak_konstruksjon_type": "trp_kun",
+    "tak_konstruksjon_type": "trp_med_tekking",
     "u_verdi_tak": null,
-    "taktekking_inkludert": false,
+    "taktekking_inkludert": true,
     "betong_inkludert": false
   },
   {
@@ -3266,9 +3266,9 @@
     "tekniske_losninger": null,
     "merknader": "Kategori: 2.1.3 Bekreftet oppdrag",
     "bygningstype": "butikk/dagligvare",
-    "tak_konstruksjon_type": "trp_kun",
+    "tak_konstruksjon_type": "trp_med_tekking",
     "u_verdi_tak": null,
-    "taktekking_inkludert": false,
+    "taktekking_inkludert": true,
     "betong_inkludert": false
   },
   {
@@ -3730,9 +3730,9 @@
     "scope": "stål, yttervegg, tak, innervegg, kran/lift, dører/vinduer, porter, betong, oljeutskiller, rørlegger",
     "tekniske_losninger": "PIR 100mm sandwich vegger, TRP-tak med taktekking, spilekledning yttervegg, 4 stk foldeporter, oljeutskiller. Ingen brannkrav (R0). Vaskehall totalentreprise uten elektro.",
     "merknader": "Glitra Drift AS, Krokstadelva. Vaskehall 140m² BRA. Priset 23.09.2025.",
-    "tak_konstruksjon_type": "trp_kun",
+    "tak_konstruksjon_type": "trp_med_tekking",
     "u_verdi_tak": null,
-    "taktekking_inkludert": false,
+    "taktekking_inkludert": true,
     "betong_inkludert": true
   },
   {

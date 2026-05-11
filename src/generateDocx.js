@@ -7,15 +7,15 @@ import {
 import { FERRO_LOGO_B64 } from './ferroLogo.js'
 
 // ── Palette — navy/cyan extracted from Ferro logo ─────────────────────────────
-const NAVY        = '0D1E35'   // deep navy (slightly darker than logo for richness)
-const NAVY_BAND   = '1B3050'   // exact logo navy — used for header band
+const NAVY        = '0D1E35'
+const NAVY_BAND   = '1B3050'
 const NAVY_MID    = '1E3D65'
-const CYAN        = '4DB8E8'   // exact logo cyan
-const CYAN_PALE   = 'B8DFF3'   // very light cyan for ruled lines
-const INK         = '111C27'   // near-black for body text
-const SLATE       = '3A5068'   // muted mid for secondary text
-const ASH         = '7B96AA'   // light secondary labels
-const PAPER       = 'F6F9FC'   // barely-tinted page fill for table rows
+const CYAN        = '4DB8E8'
+const CYAN_PALE   = 'B8DFF3'
+const INK         = '111C27'
+const SLATE       = '3A5068'
+const ASH         = '7B96AA'
+const PAPER       = 'F6F9FC'
 const WHITE       = 'FFFFFF'
 
 // ── No-border shorthand ───────────────────────────────────────────────────────
@@ -25,13 +25,11 @@ const NB  = { top: nb, bottom: nb, left: nb, right: nb, insideHorizontal: nb, in
 // ── Typography helpers ────────────────────────────────────────────────────────
 const run = (text, opts = {}) => new TextRun({ text, font: 'Arial', size: 20, color: INK, ...opts })
 
-// Micro label — spaced caps, ASH color
 const label = (text) => new Paragraph({
   spacing: { before: 0, after: 40 },
   children: [new TextRun({ text: text.toUpperCase(), font: 'Arial', size: 14, color: ASH, characterSpacing: 60 })]
 })
 
-// Section heading — tabbed left accent via left-border paragraph + bold navy text
 const sectionHead = (text) => new Paragraph({
   spacing: { before: 340, after: 100 },
   border: { left: { style: BorderStyle.SINGLE, size: 12, color: CYAN, space: 8 } },
@@ -66,13 +64,12 @@ const ruleThin = () => new Paragraph({
   children: [new TextRun('')]
 })
 
-// ── Price table — 3-row specification style ───────────────────────────────────
+// ── Price table ───────────────────────────────────────────────────────────────
 function priceTable(sumExMva, mva, sumInkMva) {
   const fmtNO = (n) => Math.round(n).toLocaleString('nb-NO') + ',-'
 
-  const specRow = (code, label, value, isTotal) => new TableRow({
+  const specRow = (code, labelText, value, isTotal) => new TableRow({
     children: [
-      // Code column
       new TableCell({
         width: { size: 900, type: WidthType.DXA },
         shading: { fill: isTotal ? NAVY_BAND : PAPER, type: ShadingType.CLEAR },
@@ -83,7 +80,6 @@ function priceTable(sumExMva, mva, sumInkMva) {
         },
         children: [new Paragraph({ children: [new TextRun({ text: code, font: 'Arial', size: 15, color: isTotal ? CYAN : ASH, characterSpacing: 30 })] })]
       }),
-      // Label column
       new TableCell({
         width: { size: 5700, type: WidthType.DXA },
         shading: { fill: isTotal ? NAVY_BAND : WHITE, type: ShadingType.CLEAR },
@@ -92,9 +88,8 @@ function priceTable(sumExMva, mva, sumInkMva) {
           top: nb, left: nb, right: nb,
           bottom: { style: BorderStyle.SINGLE, size: 2, color: isTotal ? CYAN : CYAN_PALE },
         },
-        children: [new Paragraph({ children: [new TextRun({ text: label, font: 'Arial', size: isTotal ? 23 : 20, bold: isTotal, color: isTotal ? WHITE : INK })] })]
+        children: [new Paragraph({ children: [new TextRun({ text: labelText, font: 'Arial', size: isTotal ? 23 : 20, bold: isTotal, color: isTotal ? WHITE : INK })] })]
       }),
-      // Value column
       new TableCell({
         width: { size: 2400, type: WidthType.DXA },
         shading: { fill: isTotal ? NAVY_BAND : WHITE, type: ShadingType.CLEAR },
@@ -123,7 +118,7 @@ function priceTable(sumExMva, mva, sumInkMva) {
   })
 }
 
-// ── Header: navy band, logo + document meta ───────────────────────────────────
+// ── Header ────────────────────────────────────────────────────────────────────
 function buildHeader(logoBytes) {
   return new Header({
     children: [
@@ -134,7 +129,6 @@ function buildHeader(logoBytes) {
         rows: [
           new TableRow({
             children: [
-              // Logo cell — white so logo is always visible
               new TableCell({
                 borders: NB,
                 shading: { fill: WHITE, type: ShadingType.CLEAR },
@@ -144,7 +138,6 @@ function buildHeader(logoBytes) {
                   children: [new ImageRun({ data: logoBytes, transformation: { width: 108, height: 72 }, type: 'png' })]
                 })]
               }),
-              // Meta cell — also navy background, right-aligned
               new TableCell({
                 borders: NB,
                 shading: { fill: NAVY_BAND, type: ShadingType.CLEAR },
@@ -163,7 +156,6 @@ function buildHeader(logoBytes) {
           })
         ]
       }),
-      // Cyan stripe under the band
       new Paragraph({
         border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: CYAN, space: 0 } },
         spacing: { before: 0, after: 0 },
@@ -213,8 +205,146 @@ function buildFooter() {
   })
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
-export async function generateAndDownloadDocx(data) {
+// ── Block description text — per block type ───────────────────────────────────
+function blockDescription(block, forutsetninger) {
+  const id = (block.id || '').toLowerCase()
+  const basis = (block.basis || '').toLowerCase()
+  const assumptions = (block.assumptions || []).join(' ').toLowerCase()
+  const combined = basis + ' ' + assumptions
+
+  // Detect tak type from basis/assumptions
+  const getTakType = () => {
+    if (combined.includes('varmt_tak_u013')) return 'varmt_tak_u013'
+    if (combined.includes('varmt_tak_u018')) return 'varmt_tak_u018'
+    if (combined.includes('sandwich_pir_tak') || combined.includes('sandwich pir')) return 'sandwich_pir_tak'
+    if (combined.includes('trp_med_tekking') || combined.includes('med tekking')) return 'trp_med_tekking'
+    if (combined.includes('trp_kun') || combined.includes('trp kun')) return 'trp_kun'
+    // Fallback: check forutsetninger
+    const uTak = forutsetninger?.u_verdi_tak
+    if (uTak <= 0.13) return 'varmt_tak_u013'
+    if (uTak <= 0.18) return 'varmt_tak_u018'
+    return 'trp_kun'
+  }
+
+  // Detect vegg type from basis/assumptions
+  const getVeggType = () => {
+    if (combined.includes('sandwich_pir') || combined.includes('pir')) return 'sandwich_pir'
+    if (combined.includes('kaldtlager') || combined.includes('uisolert')) return 'kaldtlager'
+    return 'sandwich'
+  }
+
+  if (id === 'stål' || id === 'stal' || id === 'stalkonstruksjon' || block.name?.toLowerCase().includes('stålkonstruks')) {
+    return [
+      body('Det er medregnet produksjon, levering og montasje av komplett stålkonstruksjon. Stålkonstruksjonen forutsettes levert i RAL 7000 (grå). Stålet er slynget SA 2,5 og primet med jernoksyd.'),
+      body('Stålkonstruksjonen er prosjektert og beregnet etter gjeldende norske standarder:'),
+      bullet('NS-EN 1990 Prosjekteringsgrunnlag for konstruksjoner'),
+      bullet('NS-EN 1991 Laster på konstruksjoner'),
+      bullet('NS-EN 1993 Prosjektering av stålkonstruksjoner'),
+      body('Pris er innhentet fra leverandør og er inkl. konstruksjonstegninger.'),
+    ]
+  }
+
+  if (id === 'tak') {
+    const takType = getTakType()
+    const uVerdi = forutsetninger?.u_verdi_tak ?? 0.18
+
+    if (takType === 'varmt_tak_u013') {
+      return [
+        body(`Det er medregnet komplett takløsning med galvaniserte, selvbærende TRP-takplater, dampsperre, isolasjon og ett-lags asfalttakbelegg. Taket er forutsatt utført med fall i konstruksjon og en prosjektert U-verdi på 0,13.`),
+        body('Takløsningen inkluderer gesims og nødvendig beslag. Asfaltbelegg etter leverandørens spesifikasjon og med minimum 10 års garanti.'),
+      ]
+    }
+
+    if (takType === 'varmt_tak_u018') {
+      return [
+        body(`Det er medregnet komplett takløsning med galvaniserte, selvbærende TRP-takplater, dampsperre, isolasjon (EPS + mineralull) og ett-lags asfalttakbelegg. Prosjektert U-verdi ${String(uVerdi).replace('.', ',')}.`),
+        body('Takløsningen inkluderer gesims og nødvendig beslag.'),
+      ]
+    }
+
+    if (takType === 'sandwich_pir_tak') {
+      return [
+        body('Det er medregnet komplett takløsning med isolerte sandwichtakelementer (PIR-kjerne). Elementene monteres direkte på primærkonstruksjonen med integrert dampsperre og ferdig overflate.'),
+      ]
+    }
+
+    if (takType === 'trp_med_tekking') {
+      return [
+        body('Det er medregnet galvaniserte, selvbærende TRP-takplater med dampsperre og ett-lags asfalttakbelegg. Taket er forutsatt utført med fall i konstruksjon.'),
+        body('Taktekking er inkludert i prisen.'),
+      ]
+    }
+
+    // trp_kun — kaldtlager eller uisolert
+    return [
+      body('Det er medregnet galvaniserte, selvbærende TRP-takplater uten isolasjon (kaldtlager). Taktekking er ikke medregnet.'),
+    ]
+  }
+
+  if (id === 'yttervegg') {
+    const veggType = getVeggType()
+    const uVerdi = forutsetninger?.u_verdi_vegg ?? 0.18
+
+    if (veggType === 'kaldtlager') {
+      return [
+        body('Det er medregnet komplette yttervegger i profilerte stålplater uten isolasjon. Levering og montasje er inkludert.'),
+      ]
+    }
+
+    return [
+      body(`Det er medregnet komplette yttervegger i sandwichpanel med PIR-isolasjon. U-verdi ${String(uVerdi).replace('.', ',')} (W/K*m²). Levering og montasje er inkludert.`),
+      body('Veggfarge RAL 9002 (off-white) eller etter avtale. Inkludert vinduer og eventuelle åpninger iht. tegning.'),
+    ]
+  }
+
+  if (id === 'betong' || id === 'betongfundament') {
+    return [
+      body('Røde streker på tegning viser plasstøpt stripefundament. Det er medregnet støping av fundamenter (søylefundamenter og ringmur) med nødvendige stålbolter og forankring.'),
+      body('Armering og forskalingsarbeider er inkludert. Gravearbeid og masseforflytting er ikke medregnet.'),
+    ]
+  }
+
+  if (id === 'betongbrystning') {
+    return [
+      body('Det er medregnet levering og montasje av prefabrikkerte brystningselementer (betongsockel) rundt bygget, høyde iht. tegning. Elementene settes på stripefundament og fuges.'),
+    ]
+  }
+
+  if (id === 'porter' || id === 'dører') {
+    return [
+      body('Det er medregnet levering og montasje av porter/dører iht. tegning og spesifikasjon. Porter er fra godkjent leverandør med nødvendig garanti og service.'),
+    ]
+  }
+
+  if (id === 'kran_lift' || id === 'kran') {
+    return [
+      body('Det er medregnet leie av kran og/eller lift i forbindelse med montasje av konstruksjonen. Riggkostnader er inkludert.'),
+    ]
+  }
+
+  if (id === 'prosjektering') {
+    return [
+      body('Det er kun medregnet prosjektering på stålkonstruksjon og betongfundamentering. Øvrig prosjektering (ARK, RIB, RIV, RIE) er ikke inkludert.'),
+    ]
+  }
+
+  if (id === 'rigg' || id === 'rigg_og_drift') {
+    return [
+      body('Ferro har medregnet nødvendig oppfølging av prosjektet fra start til slutt, herunder rigging av byggeplass, transport, sikring og HMS-tiltak under montering.'),
+    ]
+  }
+
+  // Generic fallback — use assumptions text if available
+  const assumptionText = block.assumptions?.filter(a => a && a.length > 10).join('. ')
+  if (assumptionText) {
+    return [body(assumptionText)]
+  }
+
+  return [body(`Det er medregnet ${block.name?.toLowerCase() || id} iht. tegning og beskrivelse.`)]
+}
+
+// ── Build Document (pure, no browser APIs — testable in Node.js) ──────────────
+export function buildDocument(data) {
   const DEFAULT_SIGNER = { name: 'Marian Mychko', title: 'Kalkulatør', tlf: '91 92 36 26', email: 'marian@ferrostal.no' }
   const DEFAULT_FORUTSETNINGER = {
     u_verdi_tak: 0.18,
@@ -224,9 +354,28 @@ export async function generateAndDownloadDocx(data) {
     bruddgrense_kn_m2: 250,
     gyldighet_dager: 14,
   }
-  const { projectName, result, blocks, stalPrice, riggPct, kunde } = data
+  const { projectName, result, blocks, stalPrice, riggPct, logoBytes } = data
   const signer = { ...DEFAULT_SIGNER, ...(data.signer || {}) }
   const f = { ...DEFAULT_FORUTSETNINGER, ...(data.forutsetninger || {}) }
+
+  // Resolve stål price: prefer manual stalPrice, fall back to stål block mid price
+  const stalBlock = (blocks || []).find(b =>
+    ['stal', 'stål', 'stalkonstruksjon'].includes((b.id || '').toLowerCase()) ||
+    b.name?.toLowerCase().includes('stålkonstruks')
+  )
+  const stalNum = stalPrice ? (parseInt(stalPrice) || 0) : (stalBlock ? Math.round((stalBlock.price_low + stalBlock.price_high) / 2) : 0)
+
+  const filteredBlocks = (blocks || []).filter(b =>
+    !['stal', 'stål', 'stalkonstruksjon'].includes((b.id || '').toLowerCase()) &&
+    !b.name?.toLowerCase().includes('stålkonstruks')
+  )
+
+  const totalBlocks = filteredBlocks.reduce((s, b) => s + Math.round((b.price_low + b.price_high) / 2), 0)
+  const rigg = (totalBlocks + stalNum) * ((riggPct || 8) / 100)
+  const sumExMvaRaw = totalBlocks + stalNum + rigg
+  const sumExMva = Math.round(sumExMvaRaw / 1000) * 1000
+  const mva = Math.round(sumExMva * 0.25)
+  const sumInkMva = sumExMva + mva
 
   const uVerdiText = () => {
     const parts = []
@@ -238,26 +387,10 @@ export async function generateAndDownloadDocx(data) {
       : 'Uisolert bygg, ingen U-verdi krav.'
   }
 
-  const logoBytes = Uint8Array.from(atob(FERRO_LOGO_B64), c => c.charCodeAt(0))
-
-  const filteredBlocks = (blocks || []).filter(b =>
-    !['stal', 'stål', 'stalkonstruksjon'].includes((b.id || '').toLowerCase()) &&
-    !b.name?.toLowerCase().includes('stålkonstruks')
-  )
-
-  const stal = parseInt(stalPrice) || 0
-  const totalBlocks = filteredBlocks.reduce((s, b) => s + Math.round((b.price_low + b.price_high) / 2), 0)
-  const rigg = totalBlocks * ((riggPct || 8) / 100)
-  const sumExMvaRaw = totalBlocks + stal + rigg
-  const sumExMva = Math.round(sumExMvaRaw / 1000) * 1000
-  const mva = Math.round(sumExMva * 0.25)
-  const sumInkMva = sumExMva + mva
-
   const today = new Date().toLocaleDateString('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })
-  const fmtNO = (n) => Math.round(n).toLocaleString('nb-NO') + ',-'
   const docRef = `FAS-${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`
+  const kunde = data.kunde || {}
 
-  // Recipient block (left)  |  Doc meta (right)
   const recipientTable = new Table({
     width: { size: 9000, type: WidthType.DXA },
     columnWidths: [4800, 4200],
@@ -295,18 +428,31 @@ export async function generateAndDownloadDocx(data) {
     })]
   })
 
-  // Scope section items
+  // Scope section
   const scopeItems = []
 
-  if (stal > 0) {
+  // Stål section always first when price > 0
+  if (stalNum > 0) {
+    const stalBlockForDesc = stalBlock || { id: 'stål', name: 'Stålkonstruksjon', basis: '', assumptions: [] }
     scopeItems.push(sectionHead('Stålkonstruksjon'))
-    scopeItems.push(body('Det er medregnet stålkonstruksjon til prosjektet. Pris er innhentet fra leverandør.'))
+    scopeItems.push(...blockDescription(stalBlockForDesc, f))
   }
 
+  // Other blocks with description text
   filteredBlocks.forEach(b => {
     scopeItems.push(sectionHead(b.name))
+    scopeItems.push(...blockDescription(b, f))
   })
 
+  // Prosjektering section — always included
+  scopeItems.push(sectionHead('Prosjektering'))
+  scopeItems.push(body('Det er kun medregnet prosjektering på stålkonstruksjon og betongfundamentering. Øvrig prosjektering (ARK, RIB, RIV, RIE) er ikke medregnet.'))
+
+  // Rigg og drift
+  scopeItems.push(sectionHead('Rigg og drift'))
+  scopeItems.push(body(`Ferro har medregnet nødvendig oppfølging av prosjektet fra start til slutt. Rigg og drift er kalkulert til ${riggPct || 8} % av entreprisesummen.`))
+
+  // Exclusions
   const notIncluded = (result.exclusions || []).filter(e =>
     !e.toLowerCase().includes('stål') && !e.toLowerCase().includes('stal')
   )
@@ -326,7 +472,7 @@ export async function generateAndDownloadDocx(data) {
     result.warnings.forEach(w => scopeItems.push(bullet(w)))
   }
 
-  const doc = new Document({
+  return new Document({
     numbering: {
       config: [{
         reference: 'bullets',
@@ -349,17 +495,14 @@ export async function generateAndDownloadDocx(data) {
       headers: { default: buildHeader(logoBytes) },
       footers: { default: buildFooter() },
       children: [
-        // Recipient + date/ref row
         recipientTable,
         gap(20),
 
-        // Document type label — small spaced caps
         new Paragraph({
           spacing: { before: 0, after: 40 },
           children: [new TextRun({ text: 'TILBUD / BUDSJETTPRIS', font: 'Arial', size: 15, color: CYAN, characterSpacing: 80, bold: true })]
         }),
 
-        // Project name — large, navy, dominant
         new Paragraph({
           spacing: { before: 0, after: 60 },
           children: [new TextRun({
@@ -368,33 +511,27 @@ export async function generateAndDownloadDocx(data) {
           })]
         }),
 
-        // Thin cyan rule under title
         new Paragraph({
           border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: CYAN, space: 4 } },
           spacing: { before: 0, after: 280 },
           children: [new TextRun('')]
         }),
 
-        // Intro
         new Paragraph({
           spacing: { before: 0, after: 280 },
           children: [run('Vi takker for deres forespørsel og tilbyr følgende budsjett:', { size: 19, color: SLATE, italics: true })]
         }),
 
-        // Price table
         priceTable(sumExMva, mva, sumInkMva),
         gap(24),
 
-        // Closing
         body('Vedlagte beskrivelse spesifiserer arbeidet i detalj. Vi ser frem til et godt samarbeid og håper budsjettet er konkurransedyktig.'),
         gap(20),
 
-        // Signature block
         new Paragraph({ spacing: { before: 0, after: 40 }, children: [run('Med vennlig hilsen,', { size: 19, color: SLATE })] }),
         new Paragraph({ spacing: { before: 0, after: 40 }, children: [run('Ferro Stålentreprenør AS', { size: 21, bold: true, color: NAVY_BAND })] }),
         gap(28),
 
-        // Signer line — cyan rule
         new Paragraph({
           spacing: { before: 0, after: 20 },
           border: { top: { style: BorderStyle.SINGLE, size: 4, color: CYAN, space: 6 } },
@@ -406,7 +543,6 @@ export async function generateAndDownloadDocx(data) {
         ruleHeavy(),
         gap(4),
 
-        // Scope section
         new Paragraph({
           spacing: { before: 0, after: 100 },
           children: [new TextRun({ text: 'LEVERANSEBESKRIVELSE', font: 'Arial', size: 18, bold: true, color: NAVY_BAND, characterSpacing: 60 })]
@@ -418,12 +554,11 @@ export async function generateAndDownloadDocx(data) {
         ruleHeavy(),
         gap(4),
 
-        // General conditions
         new Paragraph({
           spacing: { before: 0, after: 120 },
           children: [new TextRun({ text: 'GENERELLE FORUTSETNINGER', font: 'Arial', size: 18, bold: true, color: NAVY_BAND, characterSpacing: 60 })]
         }),
-        bullet('Ved tilleggsarbeid: 750,- pr. time for montør, 1 200,- pr. time for prosjektleder, 15 % materialpåslag.'),
+        bullet('Ved tilleggsarbeid: 750,- pr. time for montør, 1 200,- pr. time for prosjektleder, 15 % materialpåslag.'),
         bullet('Mengder gjeldende, reguleres før kontrakt.'),
         bullet('Budsjettet skriftlig bestilles av kunde. Kontinuerlig montasje forutsettes.'),
         bullet('Tegning på stål gjelder for pris. Prisjustering iht. beregningsgrunnlag.'),
@@ -431,7 +566,7 @@ export async function generateAndDownloadDocx(data) {
         bullet('Fremkommelig vei rundt bygget (min. 4 m bredde) for kran/transport.'),
         bullet(`Budsjettet gyldig ${f.gyldighet_dager} dager.`),
         bullet('Stålpris-forbehold: Budsjettet på stål er bygd på gårsdagens innkjøpspriser. Verkene har varslet prisoppgang og holder kun priser på dagsbasis. Vi forbeholder oss retten til gjennomgang ved kontrakt.'),
-        bullet(`Tiltaksklasse ${f.tiltaksklasse}, seismikk utelates, direkte fundamentering ${f.bruddgrense_kn_m2} kN/m² bruddgrense.`),
+        bullet(`Tiltaksklasse ${f.tiltaksklasse}, seismikk utelates, direkte fundamentering ${f.bruddgrense_kn_m2} kN/m² bruddgrense.`),
         bullet(uVerdiText()),
         bullet('War-clause: Force majeure iht. NS 8417 pkt. 33 / NS 8415 pkt. 24.'),
         bullet('Ryddet ut etter eget arbeid, ikke vasket.'),
@@ -439,14 +574,22 @@ export async function generateAndDownloadDocx(data) {
       ]
     }]
   })
+}
 
+// ── Main export (browser only — uses atob and Packer.toBlob) ──────────────────
+export async function generateAndDownloadDocx(data) {
+  const logoBytes = Uint8Array.from(atob(FERRO_LOGO_B64), c => c.charCodeAt(0))
+  const doc = buildDocument({ ...data, logoBytes })
   const blob = await Packer.toBlob(doc)
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  const slug = (projectName || 'prosjekt').replace(/\s+/g, '_').replace(/[^\w_]/g, '')
+  const slug = (data.projectName || 'prosjekt').replace(/\s+/g, '_').replace(/[^\w_]/g, '')
   const date = new Date().toISOString().slice(0, 10)
   a.download = `Budsjett_${slug}_${date}.docx`
+  a.style.display = 'none'
+  document.body.appendChild(a)
   a.click()
-  URL.revokeObjectURL(url)
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }

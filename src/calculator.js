@@ -30,11 +30,22 @@ const FALLBACK_RATES = {
   //   sandwich_pir_tak: PIR sandwichpaneler tak (alt-i-ett)
   // Storleiks-bucket: liten<100m², mid 100-300m², stor>300m² — pga faste rigg/stillas/transport
   tak_rates: {
-    trp_kun:           { liten:  600, mid:  500, stor:  450 },
-    trp_med_tekking:   { liten: 1200, mid: 1100, stor:  950 },
-    varmt_tak_u018:    { liten: 1250, mid: 1100, stor:  850 },
-    varmt_tak_u013:    { liten: 1450, mid: 1300, stor: 1000 },
-    sandwich_pir_tak:  { liten: 1500, mid: 1400, stor: 1200 },
+    // trp_kun = bare TRP plates only, NO taktekking — kaldtlager/uisolert only
+    // Data: Rugtvedt 407 kr/m², Star Bilskade 573 kr/m², Kaldtlager Rauland 745 kr/m²
+    trp_kun:           { liten:  750, mid:  650, stor:  600 },
+    // trp_med_tekking = TRP + asfalt/membrane waterproofing — vaskehall/butikk/standard
+    // Data: Glitra 2011, Geithus 1709, Nybruveien 1765 (mid) | Finstadjordet 1681, 2008 (stor)
+    trp_med_tekking:   { liten: 2200, mid: 1750, stor: 1650 },
+    // varmt_tak_u018 = TRP + EPS ~100-120mm + mineralull + taktekking, U=0.18
+    // Data: Ringsevja 1045 (mid), Lagerbygg Steinsholt 1781 (mid), Valle 910+1512 (stor avg 1211),
+    //        Coop Lunde 460 (stor, large building scale), Bussgarasje 1470 (stor)
+    varmt_tak_u018:    { liten: 1600, mid: 1300, stor:  950 },
+    // varmt_tak_u013 = TRP + EPS ~165-180mm + mineralull + taktekking, U=0.13
+    // Data: Coop Extra Kløfta 2554 kr/m² (mid-stor)
+    varmt_tak_u013:    { liten: 2800, mid: 2500, stor: 1800 },
+    // sandwich_pir_tak = PIR sandwich panels tak, all-in-one
+    // Data: Plantørke 1227 kr/m² (stor)
+    sandwich_pir_tak:  { liten: 1800, mid: 1500, stor: 1250 },
   },
   // kr per m² BRA (innervegg extrapolated from projects with innervegg)
   innervegg_per_m2:        680,
