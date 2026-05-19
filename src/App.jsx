@@ -14,6 +14,7 @@ import BudgetIndicator from './components/BudgetIndicator'
 import SkeletonLoader from './components/SkeletonLoader'
 import PriceSensitivityHeatmap from './components/PriceSensitivityHeatmap'
 import Confetti from './components/Confetti'
+import EmptyState from './components/EmptyState'
 import { t, getLang, setLang } from './translations'
 
 export default function App() {
@@ -166,6 +167,16 @@ export default function App() {
         {/* Input Form */}
         {!result || analyzing ? (
           <motion.div initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {/* Show EmptyState if no files uploaded yet */}
+            {files.length === 0 && !analyzing && (
+              <EmptyState
+                onAction={() => document.querySelector('input[type="file"]')?.click()}
+                actionLabel="Last opp fil nå"
+                icon="📄"
+              />
+            )}
+
+            {/* Show UploadPanel for file input and analysis */}
             <UploadPanel
               files={files}
               setFiles={setFiles}
