@@ -15,6 +15,7 @@ import SkeletonLoader from './components/SkeletonLoader'
 import PriceSensitivityHeatmap from './components/PriceSensitivityHeatmap'
 import Confetti from './components/Confetti'
 import EmptyState from './components/EmptyState'
+import CostBlockCard from './components/CostBlockCard'
 import { t, getLang, setLang } from './translations'
 
 export default function App() {
@@ -253,54 +254,22 @@ export default function App() {
                   </motion.div>
                 )}
 
-                {/* Tab 2: Blocks with Interactive Sliders */}
+                {/* Tab 2: Cost Blockers with Interactive Cards */}
                 {activeTab === 'blocks' && (
                   <motion.div key="blocks" variants={tabVariants} initial="initial" animate="animate" exit="exit">
-                    <div className="bento-grid">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 16, marginTop: 20 }}>
                       {blocks.map((block, i) => (
-                        <motion.div
+                        <CostBlockCard
                           key={i}
-                          custom={i}
-                          variants={blockVariants}
-                          initial="hidden"
-                          animate="visible"
-                          className={`bento-item ${i === 0 ? 'span-2' : ''}`}
-                          onHoverStart={() => { /* can add hover effects */ }}
-                        >
-                          <div className="spotlight-card">
-                            <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700, color: 'var(--navy)', fontFamily: "'Big Shoulders Display',sans-serif" }}>
-                              {block.name || `Block ${i + 1}`}
-                            </div>
-                            <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', marginBottom: 16 }}>
-                              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--cyan)', fontFamily: "'JetBrains Mono',monospace" }}>
-                                <AnimatedCounter to={block.priceFrom} duration={1} />
-                              </div>
-                              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>→</div>
-                              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--cyan)', fontFamily: "'JetBrains Mono',monospace" }}>
-                                <AnimatedCounter to={block.priceTo} duration={1} />
-                              </div>
-                            </div>
-                            <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 12 }}>
-                              <strong>Antakelser:</strong> {block.assumptions || '—'}
-                            </div>
-                            <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 11 }}>
-                              <div style={{ padding: '3px 10px', borderRadius: 4, background: 'rgba(77,184,232,0.1)', color: 'var(--cyan)', fontWeight: 700 }}>
-                                Sikkerhet: {block.confidence || '—'}%
-                              </div>
-                              {block.riskDescription && (
-                                <div style={{ color: 'var(--warning)' }}>⚠ {block.riskDescription}</div>
-                              )}
-                            </div>
-
-                            {/* Interactive Price Range Slider */}
-                            <PriceRangeSlider
-                              min={block.priceFrom * 0.8}
-                              max={block.priceTo * 1.2}
-                              onChange={(range) => handleBlockAdjust(i, range)}
-                              label="Prisjustering"
-                            />
-                          </div>
-                        </motion.div>
+                          block={block}
+                          index={i}
+                          onChange={(updatedBlock) => {
+                            handleBlockAdjust(i, {
+                              min: updatedBlock.priceFrom || updatedBlock.price_low,
+                              max: updatedBlock.priceTo || updatedBlock.price_high,
+                            })
+                          }}
+                        />
                       ))}
                     </div>
                   </motion.div>
