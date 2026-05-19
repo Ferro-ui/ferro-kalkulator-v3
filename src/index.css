@@ -346,6 +346,249 @@ body::before {
   animation: scanLine 1.4s ease infinite;
 }
 
+/* ── Floating Dock Navbar ─────────────────────────────────────────────────── */
+.floating-dock {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 70px;
+  display: flex;
+  align-items: stretch;
+  background: rgba(13, 30, 53, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 2px solid var(--cyan);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 0 32px;
+  gap: 16px;
+}
+
+.dock-logo-zone {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.dock-logo {
+  height: 40px;
+  object-fit: contain;
+  display: block;
+}
+
+.dock-controls {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dock-button {
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  font-family: 'Big Shoulders Display', sans-serif;
+  font-weight: 600;
+}
+
+.dock-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dock-separator {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 8px;
+}
+
+/* ── Bento Grid Layout ─────────────────────────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+
+.bento-item {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bento-item.span-2 { grid-column: span 2; aspect-ratio: auto; min-height: 280px; }
+.bento-item.span-2x2 { grid-column: span 2; grid-row: span 2; }
+
+/* ── Spotlight Card Effect ─────────────────────────────────────────────────── */
+.spotlight-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  overflow: hidden;
+  height: 100%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(77, 184, 232, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+  pointer-events: none;
+}
+
+.spotlight-card:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 8px 32px rgba(77, 184, 232, 0.12);
+  transform: translateY(-4px);
+}
+
+.spotlight-card:hover::before {
+  width: 200%;
+  height: 200%;
+}
+
+/* ── Animated Tabs ─────────────────────────────────────────────────────────── */
+.tabs-header {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  padding-bottom: 0;
+}
+
+.tab-button {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: 'Big Shoulders Display', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tab-button:hover {
+  color: var(--text);
+}
+
+.tab-button.active {
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+}
+
+.tab-content {
+  animation: fadeUp 0.3s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Stats Card (Grand Total) ──────────────────────────────────────────────── */
+.stats-card {
+  background: var(--navy);
+  border-radius: 16px;
+  padding: 40px;
+  color: #fff;
+  margin-top: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--cyan), transparent);
+}
+
+.stats-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(77, 184, 232, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(77, 184, 232, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+.stats-content {
+  position: relative;
+  z-index: 2;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Big Shoulders Display', sans-serif;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: 'Big Shoulders Display', sans-serif;
+  color: var(--cyan);
+  letter-spacing: -0.02em;
+}
+
+.stats-divider {
+  height: 1px;
+  background: rgba(77, 184, 232, 0.2);
+  margin: 24px 0;
+}
+
+/* ── Content with Dock Offset ──────────────────────────────────────────────── */
+.main-content {
+  margin-top: 90px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 20px;
+}
+
 /* ── Scrollbar ────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

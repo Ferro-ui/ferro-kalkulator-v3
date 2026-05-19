@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import { FERRO_LOGO_B64 } from './ferroLogo'
 import { useProject } from './hooks/useProject'
 import { Card, Spinner } from './components/ui'
@@ -10,6 +10,8 @@ import HistorikkModal from './components/modals/HistorikkModal'
 import { t, getLang, setLang } from './translations'
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState('overview')
+
   const {
     apiKey, showKey, setShowKey,
     projectName, setProjectName,
@@ -56,53 +58,29 @@ export default function App() {
         <HistorikkModal onClose={() => setShowHistorikkModal(false)} apiKey={apiKey} />
       )}
 
-      {/* Navbar */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50,
-        height: 58, display: 'flex', alignItems: 'stretch',
-        background: 'rgba(13,30,53,0.94)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(77,184,232,0.18)',
-        boxShadow: '0 4px 28px rgba(0,0,0,0.22)',
-      }}>
-        <div className="nav-logo-zone">
-          <img src={`data:image/png;base64,${FERRO_LOGO_B64}`} alt="Ferro Stålentreprenør AS"
-            className="nav-logo-img" />
+      {/* Floating Dock Navbar */}
+      <div className="floating-dock">
+        <div className="dock-logo-zone">
+          <img src={`data:image/png;base64,${FERRO_LOGO_B64}`} alt="Ferro Stålentreprenør AS" className="dock-logo" />
         </div>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '0 16px', gap: 4 }}>
+        <div className="dock-controls">
           {result && (
-            <button onClick={handleReset} className="nav-ghost">
-              {t('nullstill')}
-            </button>
+            <>
+              <button onClick={handleReset} className="dock-button">{t('nullstill')}</button>
+              <div className="dock-separator" />
+            </>
           )}
-          <div className="nav-sep" />
-          <button onClick={() => setShowFeedbackModal(true)} title="Registrer faktisk pris" className="nav-icon-btn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-            </svg>
+          <button onClick={() => setShowFeedbackModal(true)} className="dock-button" title="Registrer faktisk pris">📊</button>
+          <button onClick={() => setShowHistorikkModal(true)} className="dock-button" title="Legg til i historikk">📁</button>
+          <div className="dock-separator" />
+          <button onClick={() => { setLang(getLang() === 'nb' ? 'uk' : 'nb'); window.location.reload() }} className="dock-button">
+            {getLang() === 'nb' ? '🇺🇦' : '🇳🇴'}
           </button>
-          <button onClick={() => setShowHistorikkModal(true)} title="Legg til i historikk" className="nav-icon-btn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><polyline points="12 7 12 12 15 15"/>
-            </svg>
-          </button>
-          <div className="nav-sep" />
-          <button
-            onClick={() => { setLang(getLang() === 'nb' ? 'uk' : 'nb'); window.location.reload() }}
-            className="nav-pill-btn">
-            {getLang() === 'nb' ? 'UA' : 'NO'}
-          </button>
-          <button onClick={() => setShowKey(!showKey)} className={`nav-pill-btn nav-key-btn${apiKey ? ' nav-key-active' : ''}`} title="API-nøkkel">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/>
-            </svg>
-            <span className="nav-key-dot" />
-          </button>
+          <button onClick={() => setShowKey(!showKey)} className="dock-button" title="API-nøkkel">🔑</button>
         </div>
-      </nav>
+      </div>
 
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '44px 20px' }}>
+      <div className="main-content">
 
         {/* Hero */}
         <div style={{ marginBottom: 36 }} className="stagger-1">
@@ -219,28 +197,162 @@ export default function App() {
           </div>
         )}
 
-        {/* Results */}
+        {/* Results with Tabs & Bento Grid */}
         {result && !analyzing && (
-          <ResultsPanel
-            result={result}
-            blocks={blocks}
-            onBlockChange={handleBlockChange}
-            stalPrice={stalPrice}
-            setStalPrice={setStalPrice}
-            riggPct={riggPct}
-            setRiggPct={setRiggPct}
-            totalLow={totalLow}
-            totalHigh={totalHigh}
-            stal={stal}
-            riggLow={riggLow}
-            riggHigh={riggHigh}
-            grandLow={grandLow}
-            grandHigh={grandHigh}
-            midTotal={midTotal}
-            onDownloadDocx={() => setShowTilbudModal(true)}
-            onExportTxt={handleExportSummary}
-            onReanalyze={handleAnalyze}
-          />
+          <>
+            {/* Tabs Header */}
+            <div className="tabs-header" style={{ marginTop: 40 }}>
+              <button
+                className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+                onClick={() => setActiveTab('overview')}
+              >
+                Oversikt
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'blocks' ? 'active' : ''}`}
+                onClick={() => setActiveTab('blocks')}
+              >
+                Kostblokker
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'summary' ? 'active' : ''}`}
+                onClick={() => setActiveTab('summary')}
+              >
+                Oppsummering
+              </button>
+            </div>
+
+            {/* Tab 1: Overview */}
+            {activeTab === 'overview' && (
+              <div className="tab-content">
+                <ResultsPanel
+                  result={result}
+                  blocks={blocks}
+                  onBlockChange={handleBlockChange}
+                  stalPrice={stalPrice}
+                  setStalPrice={setStalPrice}
+                  riggPct={riggPct}
+                  setRiggPct={setRiggPct}
+                  totalLow={totalLow}
+                  totalHigh={totalHigh}
+                  stal={stal}
+                  riggLow={riggLow}
+                  riggHigh={riggHigh}
+                  grandLow={grandLow}
+                  grandHigh={grandHigh}
+                  midTotal={midTotal}
+                  onDownloadDocx={() => setShowTilbudModal(true)}
+                  onExportTxt={handleExportSummary}
+                  onReanalyze={handleAnalyze}
+                />
+              </div>
+            )}
+
+            {/* Tab 2: Blocks with Bento Grid & Spotlight */}
+            {activeTab === 'blocks' && (
+              <div className="tab-content">
+                <div className="bento-grid">
+                  {blocks.map((block, i) => (
+                    <div key={i} className={`bento-item ${i === 0 ? 'span-2' : ''}`}>
+                      <div className="spotlight-card">
+                        <div style={{ marginBottom: 12, fontSize: 13, fontWeight: 700, color: 'var(--navy)', fontFamily: "'Big Shoulders Display',sans-serif" }}>
+                          {block.name || `Block ${i + 1}`}
+                        </div>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'baseline', marginBottom: 16 }}>
+                          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--cyan)', fontFamily: "'JetBrains Mono',monospace" }}>
+                            {block.priceFrom.toLocaleString('no-NO')} kr
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>→</div>
+                          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--cyan)', fontFamily: "'JetBrains Mono',monospace" }}>
+                            {block.priceTo.toLocaleString('no-NO')} kr
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.6, marginBottom: 12 }}>
+                          <strong>Antakelser:</strong> {block.assumptions || '—'}
+                        </div>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 11 }}>
+                          <div style={{ padding: '3px 10px', borderRadius: 4, background: 'rgba(77,184,232,0.1)', color: 'var(--cyan)', fontWeight: 700 }}>
+                            Sikkerhet: {block.confidence || '—'}%
+                          </div>
+                          {block.riskDescription && (
+                            <div style={{ color: 'var(--warning)' }}>⚠ {block.riskDescription}</div>
+                          )}
+                        </div>
+                        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 12 }}>
+                          <input
+                            type="number"
+                            value={block.priceFrom}
+                            onChange={e => handleBlockChange(i, { priceFrom: parseFloat(e.target.value) })}
+                            style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border)', marginBottom: 8, fontSize: 12 }}
+                          />
+                          <label style={{ fontSize: 11, color: 'var(--text-dim)' }}>Min pris</label>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Summary Stats Card */}
+            {activeTab === 'summary' && (
+              <div className="tab-content">
+                <div className="stats-card">
+                  <div className="stats-content">
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cyan)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24, fontFamily: "'Big Shoulders Display',sans-serif" }}>
+                      Budsjettsamling
+                    </div>
+
+                    <div className="stats-row">
+                      <div className="stat-item">
+                        <div className="stat-label">Arbeidsblokker</div>
+                        <div className="stat-value">{blocks.length}</div>
+                      </div>
+                      <div className="stat-item">
+                        <div className="stat-label">Totalt før påslag</div>
+                        <div className="stat-value">{totalLow.toLocaleString('no-NO')} kr</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>— {totalHigh.toLocaleString('no-NO')} kr</div>
+                      </div>
+                      <div className="stat-item">
+                        <div className="stat-label">Stålkonstruksjon</div>
+                        <div className="stat-value">{stal.toLocaleString('no-NO')} kr</div>
+                      </div>
+                    </div>
+
+                    <div className="stats-divider" />
+
+                    <div className="stats-row">
+                      <div className="stat-item">
+                        <div className="stat-label">Rigg og drift ({riggPct}%)</div>
+                        <div className="stat-value">{riggLow.toLocaleString('no-NO')} kr</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>— {riggHigh.toLocaleString('no-NO')} kr</div>
+                      </div>
+                      <div className="stat-item">
+                        <div className="stat-label">Budsjettspenn</div>
+                        <div className="stat-value" style={{ fontSize: 28 }}>{grandLow.toLocaleString('no-NO')}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>til {grandHigh.toLocaleString('no-NO')} kr</div>
+                      </div>
+                      <div className="stat-item">
+                        <div className="stat-label">Midtpunkt</div>
+                        <div className="stat-value">{midTotal.toLocaleString('no-NO')} kr</div>
+                      </div>
+                    </div>
+
+                    <div className="stats-divider" />
+
+                    <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
+                      <button onClick={() => setShowTilbudModal(true)} className="btn-primary" style={{ flex: 1, padding: '14px 20px', fontSize: 14 }}>
+                        📄 Last ned .docx budsjett
+                      </button>
+                      <button onClick={handleExportSummary} className="btn-primary" style={{ flex: 1, padding: '14px 20px', fontSize: 14, background: 'rgba(77,184,232,0.15)', color: 'var(--cyan)', border: '1px solid var(--cyan)' }}>
+                        💾 Estimat .txt
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
       </div>
